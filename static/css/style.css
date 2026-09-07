@@ -220,7 +220,6 @@ h1, h2, h3, .brand {
     font-weight: 700;
 }
 
-/* Jarak, navigasi, dan elemen yang berpotensi melebar. */
 .site-header .container {
     gap: 1rem;
     flex-wrap: wrap;
@@ -277,7 +276,6 @@ h1, h2, h3, .brand {
     border-top: 1px solid var(--line);
 }
 
-/* Fokus keyboard harus terlihat; warna tombol tetap mudah dibaca. */
 a:focus-visible {
     outline: 3px solid var(--accent-dark);
     outline-offset: 4px;
@@ -292,7 +290,6 @@ a:focus-visible {
     background: var(--accent-dark);
 }
 
-/* Tablet: kartu menjadi dua kolom, profil masih berdampingan. */
 @media (max-width: 900px) {
     .card-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -300,7 +297,6 @@ a:focus-visible {
 
 }
 
-/* Mobile: nama, foto, lalu bio; kartu ditumpuk menjadi satu kolom. */
 @media (max-width: 600px) {
     .site-header .container {
         align-items: flex-start;
@@ -349,7 +345,6 @@ a:focus-visible {
 
 }
 
-/* Hormati preferensi pengguna yang mengurangi gerakan animasi. */
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
