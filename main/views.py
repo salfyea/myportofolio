@@ -12,6 +12,8 @@ def show_main(request):
             "Information Systems Student at Universitas Indonesia with interests in "
             "product management, technology, business strategy, and digital innovation."
         ),
+        
+        "experience_list": Experience.objects.order_by("-started_at"),
     }
     return render(request, "index.html", context)
 
