@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - {{ name }}{% endblock %}
+
+{% block content %}
+<section class="projects-section">
+    <div class="container">
+        <h1 class="section-title">Projects</h1>
+
+        {% if project_list %}
+            <div class="card-grid">
+                {% for project in project_list %}
+                    <article class="card project-card">
+                        <h2>{{ project.title }}</h2>
+                        <p class="project-category">{{ project.category }}</p>
+                        <p>{{ project.description }}</p>
+
+                        {% if project.link %}
+                            <a href="{{ project.link }}" target="_blank" rel="noopener">
+                                View project
+                            </a>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">Belum ada project yang tersedia.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
