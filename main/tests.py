@@ -18,7 +18,7 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "index.html")
-        self.assertNotContains(response, self.experience.title)
+        self.assertContains(response, self.experience.title)
         self.assertContains(
             response,
             f'href="{reverse("main:show_experience")}"',
@@ -78,7 +78,7 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_main"))
 
         self.assertNotContains(response, "VPIC Business Development")
-        self.assertNotContains(response, 'id="experience"')
+        self.assertContains(response, 'id="experience"')
 
     def test_page_titles_are_unique(self):
         for name, title in (
