@@ -6,19 +6,22 @@
 }
 
 :root {
-    /* Color System */
-    --ink: #1c1917;
-    --paper: #faf6f0;
-    --accent: #d95d39;
-    --accent-dark: #a8442a;
-    --line: #e3d9c9;
-    --text-muted: #6b6459;
-    --white: #ffffff;
-    /* Layout */
+    --ink: #4A3B47;
+    --paper: #FFF8F5;
+
+    --accent: #FF9FC5;
+    --accent-dark: #E67FA8;
+
+    --secondary: #DCC6E0;
+    --line: #F1DDE5;
+
+    --text-muted: #8A7A84;
+    --white: #FFFFFF;
+
     --container-width: 1000px;
-    /* Effects */
-    --radius: 16px;
-    --transition: color .3s ease, background-color .3s ease, transform .3s ease, box-shadow .3s ease;
+
+    --radius: 24px;
+    --transition: .3s ease;
 }
 
 html {
@@ -31,6 +34,49 @@ body {
     color: var(--ink);
     line-height: 1.6;
 }
+
+body {
+    font-family: "Inter", sans-serif;
+}
+
+
+h1, h2, h3 {
+    font-family: "Playfair Display", serif;
+}
+
+/* GLOBAL PAGE ANIMATION */
+
+main {
+    animation: fadeUp 0.8s ease both;
+}
+
+
+@keyframes fadeUp {
+
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+}
+
+.card {
+    padding: 1.8rem;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.card:hover {
+    transform: translateY(-8px);
+}
+
+
 
 h1, h2, h3, .brand {
     font-family: "Space Grotesk", sans-serif;
@@ -45,7 +91,21 @@ h1, h2, h3, .brand {
 
 /* HEADER & NAVIGATION */
 .site-header {
-    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 18px;
+    z-index: 100;
+
+    width: min(90%, var(--container-width));
+    margin: 18px auto;
+
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(12px);
+
+    border: 1px solid var(--line);
+    border-radius: 999px;
+
+    box-shadow:
+        0 10px 30px rgba(255,159,197,.15);
 }
 
 .site-header .container {
@@ -68,13 +128,27 @@ h1, h2, h3, .brand {
 }
 
 .site-nav a {
-    color: var(--ink);
-    text-decoration: none;
-    transition: var(--transition);
+
+    padding:.5rem 1rem;
+
+    border-radius:999px;
+
+    color:var(--ink);
+
+    text-decoration:none;
+
+    transition:var(--transition);
 }
 
+
 .site-nav a:hover {
-    color: var(--accent);
+
+    background:var(--accent);
+
+    color:white;
+
+    transform:translateY(-2px);
+
 }
 
 /* HERO PROFILE SECTION */
@@ -169,6 +243,7 @@ h1, h2, h3, .brand {
     color: var(--white);
     text-decoration: none;
     transition: var(--transition);
+    border-radius: var(--radius);
 }
 
 .social-link:hover {
@@ -184,6 +259,12 @@ h1, h2, h3, .brand {
 .section-title {
     font-size: 2rem;
     margin-bottom: 2rem;
+}
+
+.section-label {
+    color: #D86A9B;
+    font-weight: 700;
+    letter-spacing: .08em;
 }
 
 /* REUSABLE CARD COMPONENT */
@@ -203,7 +284,9 @@ h1, h2, h3, .brand {
 
 .card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(0,0,0,.1);
+
+    box-shadow:
+        0 18px 35px rgba(255,159,197,.25);
 }
 
 .info-card, .skill-card {
@@ -211,8 +294,46 @@ h1, h2, h3, .brand {
 }
 
 .project-card {
-    background: var(--ink);
-    color: var(--white);
+    background: #F7C8D9;
+    color: #4A3B47;
+
+    border: 1px solid #F1B7CC;
+    border-radius: 28px;
+
+    box-shadow:
+        0 12px 30px rgba(214, 93, 140, 0.18);
+
+    transition: .3s ease;
+}
+
+.project-card h3 {
+    font-family: "Playfair Display", serif;
+    font-weight: 700;
+    color: #49323F;
+}
+
+.project-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(255, 159, 197, .25);
+}
+
+.projects-section {
+    animation: fadeUp .8s ease;
+}
+
+
+
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .highlight {
@@ -346,6 +467,10 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    main {
+        animation:none;
+    }
+
     html {
         scroll-behavior: auto;
     }
@@ -388,10 +513,27 @@ a:focus-visible {
 }
 
 .experience-card {
-    padding: 1.25rem;
-    background-color: #fff;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
+    background: #F8D7E3;
+    border: 1px solid #F1BFD0;
+
+    border-radius: 28px;
+
+    padding: 2rem;
+
+    color: #4A3B47;
+
+    box-shadow:
+        0 15px 35px rgba(216, 106, 155, .15);
+
+    transition: .3s ease;
+}
+
+
+.experience-card:hover {
+    transform: translateY(-8px);
+
+    box-shadow:
+        0 20px 45px rgba(216, 106, 155, .25);
 }
 
 .experience-category {
@@ -465,20 +607,26 @@ a:focus-visible {
 }
 
 .button {
-    display: inline-block;
-    padding: 0.65rem 1rem;
-    border: 0;
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--white);
-    cursor: pointer;
-    font: inherit;
-    font-weight: 700;
+    display: inline-block; /* Menyelesaikan masalah overlap */
+    margin-top: 1rem;      /* Memberi jarak aman dari teks di atasnya */
+    
+    background: #D86A9B;
+    color: white;
+
+    border-radius: 999px;
+
+    padding: .8rem 1.8rem;
+
     text-decoration: none;
+
+    transition: .3s ease;
 }
 
+
 .button:hover {
-    background: var(--accent-dark);
+    background: #C45787;
+
+    transform: translateY(-3px);
 }
 
 .button-secondary {
@@ -532,10 +680,15 @@ a:focus-visible {
     background: #b42318;
 }
 
-.button-danger:hover {
-    background: #8f1c13;
+.button-danger {
+    background: #EFA7B7;
+    color: #6B3345;
 }
 
+
+.button-danger:hover {
+    background: #E58CA5;
+}
 
 /* DELETE MODAL */
 
@@ -592,3 +745,7 @@ a:focus-visible {
         flex-direction: column;
     }
 }
+
+
+
+
