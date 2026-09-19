@@ -294,6 +294,8 @@ main {
 .project-card {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    gap: .9rem;
 
     background: #F7C8D9;
     color: #4A3B47;
@@ -302,7 +304,7 @@ main {
     border-radius: 28px;
 
     overflow: hidden;
-    padding: 0; /* image bleeds to the card edges; inner elements get their own margins below */
+    padding: 1.5rem;
 
     box-shadow:
         0 12px 30px rgba(214, 93, 140, 0.18);
@@ -315,15 +317,14 @@ main {
     box-shadow: 0 20px 40px rgba(255, 159, 197, .25);
 }
 
-.project-card h2,
-.project-card p,
-.project-card .project-actions {
-    margin-left: 1.8rem;
-    margin-right: 1.8rem;
+.project-card .project-image {
+    margin: -1.5rem -1.5rem 0;
+    width: calc(100% + 3rem);
+    border-radius: 0;
 }
 
 .project-card .project-actions {
-    margin-bottom: 1.8rem;
+    margin-top: auto;
 }
 
 .project-card h3 {
