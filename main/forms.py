@@ -1,9 +1,13 @@
+"""Forms for the portfolio app."""
+
 from django.forms import ModelForm, TextInput, Textarea, URLInput
 
 from main.models import Project
 
 
 class ProjectForm(ModelForm):
+    """Form used to create a new ``Project`` from the "Tambah Project" page."""
+
     class Meta:
         model = Project
         fields = [
@@ -11,6 +15,7 @@ class ProjectForm(ModelForm):
             "description",
             "category",
             "link",
+            "project_image_url",
         ]
 
         labels = {
@@ -18,6 +23,7 @@ class ProjectForm(ModelForm):
             "description": "Deskripsi Project",
             "category": "Kategori",
             "link": "URL Project",
+            "project_image_url": "URL Gambar Project",
         }
 
         widgets = {
@@ -44,5 +50,9 @@ class ProjectForm(ModelForm):
                     "placeholder": "https://github.com/...",
                 }
             ),
+            "project_image_url": URLInput(
+                attrs={
+                    "placeholder": "https://drive.google.com/thumbnail?id=...",
+                }
+            ),
         }
-        

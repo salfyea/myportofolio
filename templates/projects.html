@@ -44,6 +44,13 @@
                 {% for project in project_list %}
                     <article class="card project-card">
 
+                        {% if project.project_image_url %}
+                            <img 
+                                src="{{ project.project_image_url }}" 
+                                alt="{{ project.title }}"
+                                class="project-image">
+                        {% endif %}
+
                         <h2>
                             {{ project.title }}
                         </h2>
