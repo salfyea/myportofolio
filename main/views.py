@@ -10,24 +10,9 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from main.forms import ProjectForm
-from main.models import Experience, Project
+from main.models import Experience, Project, Skill
 
 PROFILE_NAME = "Salwa Alifia Putri"
-
-SKILL_LIST = [
-    {"name": "Python", "icon_url": "https://cdn.simpleicons.org/python"},
-    {"name": "JavaScript", "icon_url": "https://cdn.simpleicons.org/javascript"},
-    {"name": "TypeScript", "icon_url": "https://cdn.simpleicons.org/typescript"},
-    {"name": "React", "icon_url": "https://cdn.simpleicons.org/react"},
-    {"name": "Next.js", "icon_url": "https://cdn.simpleicons.org/nextdotjs"},
-    {"name": "Django", "icon_url": "https://cdn.simpleicons.org/django"},
-    {"name": "Supabase", "icon_url": "https://cdn.simpleicons.org/supabase"},
-    {"name": "Docker", "icon_url": "https://cdn.simpleicons.org/docker"},
-    {"name": "Git", "icon_url": "https://cdn.simpleicons.org/git"},
-    {"name": "Figma", "icon_url": "https://cdn.simpleicons.org/figma"},
-    {"name": "Notion", "icon_url": "https://cdn.simpleicons.org/notion"},
-    {"name": "Jira", "icon_url": "https://cdn.simpleicons.org/jira"},
-]
 
 
 def show_main(request):
@@ -41,7 +26,7 @@ def show_main(request):
             "product management, technology, business strategy, and digital innovation."
         ),
         "experience_list": Experience.objects.order_by("-started_at"),
-        "skill_list": SKILL_LIST,
+        "skill_list": Skill.objects.all(),
     }
     return render(request, "index.html", context)
 
