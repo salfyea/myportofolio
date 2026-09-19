@@ -9,7 +9,7 @@ from django.core import serializers
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from main.forms import ProjectForm
+from main.forms import ProjectForm, SkillForm
 from main.models import Experience, Project, Skill
 
 PROFILE_NAME = "Salwa Alifia Putri"
@@ -108,6 +108,40 @@ def update_project(request, project_id):
         "project": project,
     }
     return render(request, "projects_form.html", context)
+
+
+def create_skill(request):
+    """Show and process the "add skill" form."""
+    form = SkillForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Skill baru berhasil ditambahkan!")
+        return redirect("main:show_main")
+
+    context = {
+        "name": PROFILE_NAME,
+        "form": form,
+    }
+    return render(request, "skills_form.html", context)
+
+
+def update_skill(request, skill_id):
+    """Show and process the "edit skill" form for an existing skill."""
+    skill = get_object_or_404(Skill, pk=skill_id)
+    form = SkillForm(request.POST or None, instance=skill)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Skill berhasil diperbarui!")
+        return redirect("main:show_main")
+
+    context = {
+        "name": PROFILE_NAME,
+        "form": form,
+        "skill": skill,
+    }
+    return render(request, "skills_form.html", context)
 
 
 def delete_project(request, project_id):
