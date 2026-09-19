@@ -110,6 +110,15 @@ def update_project(request, project_id):
     return render(request, "projects_form.html", context)
 
 
+def show_skills_manage(request):
+    """Render the skills management page listing every Skill."""
+    context = {
+        "name": PROFILE_NAME,
+        "skill_list": Skill.objects.all(),
+    }
+    return render(request, "skills_manage.html", context)
+
+
 def create_skill(request):
     """Show and process the "add skill" form."""
     form = SkillForm(request.POST or None)
@@ -117,7 +126,7 @@ def create_skill(request):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Skill baru berhasil ditambahkan!")
-        return redirect("main:show_main")
+        return redirect("main:show_skills_manage")
 
     context = {
         "name": PROFILE_NAME,
@@ -134,7 +143,7 @@ def update_skill(request, skill_id):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Skill berhasil diperbarui!")
-        return redirect("main:show_main")
+        return redirect("main:show_skills_manage")
 
     context = {
         "name": PROFILE_NAME,
@@ -142,6 +151,17 @@ def update_skill(request, skill_id):
         "skill": skill,
     }
     return render(request, "skills_form.html", context)
+
+
+def delete_skill(request, skill_id):
+    """Delete a skill on POST; any other method just redirects back."""
+    skill = get_object_or_404(Skill, pk=skill_id)
+
+    if request.method == "POST":
+        skill.delete()
+        messages.success(request, "Skill berhasil dihapus!")
+
+    return redirect("main:show_skills_manage")
 
 
 def delete_project(request, project_id):

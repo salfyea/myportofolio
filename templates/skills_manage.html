@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Kelola Skills - {{ name }}{% endblock %}
+
+{% block content %}
+<section class="projects-section">
+    <div class="container">
+
+        <div class="project-header">
+            <h1 class="section-title">Kelola Skills</h1>
+
+            <a
+                href="{% url 'main:create_skill' %}"
+                class="button"
+            >
+                + Tambah Skill
+            </a>
+        </div>
+
+        {% if skill_list %}
+            <table class="skills-table">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Kategori</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for skill in skill_list %}
+                        <tr>
+                            <td>{{ skill.name }}</td>
+                            <td>{{ skill.category }}</td>
+                            <td class="skills-table__actions">
+                                <a
+                                    href="{% url 'main:update_skill' skill.id %}"
+                                    class="button button-secondary"
+                                >
+                                    Edit
+                                </a>
+
+                                <form
+                                    method="post"
+                                    action="{% url 'main:delete_skill' skill.id %}"
+                                >
+                                    {% csrf_token %}
+
+                                    <button
+                                        type="submit"
+                                        class="button button-danger"
+                                    >
+                                        Hapus
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-state">
+                Belum ada skill yang ditambahkan.
+            </p>
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}
