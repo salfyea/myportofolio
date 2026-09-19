@@ -11,11 +11,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=8">
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
+    {% csrf_token %}
+
     <header class="site-header">
         <div class="container">
             <a href="{% url 'main:show_main' %}" class="brand">
@@ -40,6 +42,169 @@
             <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
     </footer>
+
+    <div id="ai-chat-widget" class="ai-chat-widget">
+        <div id="ai-chat-window" class="ai-chat-window">
+            <div class="ai-chat-header">
+                <p class="ai-chat-title">Tanya AI tentang Salwa</p>
+                <button
+                    id="ai-chat-window-close"
+                    class="ai-chat-window-close"
+                    type="button"
+                    aria-label="Tutup chat"
+                >&times;</button>
+            </div>
+
+            <div id="ai-chat-messages" class="ai-chat-messages"></div>
+
+            <form id="ai-chat-form" class="ai-chat-form">
+                <input
+                    id="ai-chat-input"
+                    class="ai-chat-input"
+                    type="text"
+                    placeholder="Tulis pertanyaan..."
+                    autocomplete="off"
+                >
+                <button type="submit" class="ai-chat-send" aria-label="Kirim pesan">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <button
+            id="ai-chat-toggle"
+            class="ai-chat-toggle"
+            type="button"
+            aria-label="Buka chat AI"
+            aria-expanded="false"
+        >
+            <svg class="ai-chat-icon-chat" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
+            </svg>
+            <svg class="ai-chat-icon-close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.3 5.71 12 12.01l-6.3-6.3-1.41 1.42 6.3 6.29-6.3 6.3 1.41 1.41 6.3-6.3 6.3 6.3 1.41-1.41-6.3-6.3 6.3-6.29z"/>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        (function () {
+            function getCookie(name) {
+                const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+                return match ? decodeURIComponent(match[1]) : null;
+            }
+
+            const widget = document.getElementById('ai-chat-widget');
+            const toggleBtn = document.getElementById('ai-chat-toggle');
+            const closeBtn = document.getElementById('ai-chat-window-close');
+            const messagesEl = document.getElementById('ai-chat-messages');
+            const form = document.getElementById('ai-chat-form');
+            const input = document.getElementById('ai-chat-input');
+
+            const chatHistory = [];
+            let hasGreeted = false;
+
+            function scrollToBottom() {
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+
+            function addMessage(role, text) {
+                chatHistory.push({ role: role, text: text });
+
+                const bubble = document.createElement('div');
+                bubble.className = 'ai-chat-bubble ai-chat-bubble--' + role;
+                bubble.textContent = text;
+                messagesEl.appendChild(bubble);
+                scrollToBottom();
+                return bubble;
+            }
+
+            function addLoadingBubble() {
+                const bubble = document.createElement('div');
+                bubble.className = 'ai-chat-bubble ai-chat-bubble--ai ai-chat-bubble--loading';
+                bubble.innerHTML = '<span></span><span></span><span></span>';
+                messagesEl.appendChild(bubble);
+                scrollToBottom();
+                return bubble;
+            }
+
+            function openWidget() {
+                widget.classList.add('is-open');
+                toggleBtn.setAttribute('aria-expanded', 'true');
+
+                if (!hasGreeted) {
+                    hasGreeted = true;
+                    addMessage('ai', 'Halo! Tanya apa saja tentang pengalaman, skill, atau proyek Salwa ya.');
+                }
+
+                input.focus();
+            }
+
+            function closeWidget() {
+                widget.classList.remove('is-open');
+                toggleBtn.setAttribute('aria-expanded', 'false');
+            }
+
+            toggleBtn.addEventListener('click', function () {
+                if (widget.classList.contains('is-open')) {
+                    closeWidget();
+                } else {
+                    openWidget();
+                }
+            });
+
+            closeBtn.addEventListener('click', closeWidget);
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const message = input.value.trim();
+                if (!message) {
+                    return;
+                }
+
+                addMessage('user', message);
+                input.value = '';
+                input.focus();
+
+                const loadingBubble = addLoadingBubble();
+
+                fetch("{% url 'main:chat_with_ai' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({ message: message }),
+                })
+                    .then(function (response) {
+                        return response.json()
+                            .catch(function () {
+                                return {};
+                            })
+                            .then(function (data) {
+                                return { ok: response.ok, data: data };
+                            });
+                    })
+                    .then(function (result) {
+                        loadingBubble.remove();
+
+                        if (!result.ok || result.data.error || !result.data.reply) {
+                            addMessage('ai', 'Maaf, ada masalah. Coba lagi ya.');
+                            return;
+                        }
+
+                        addMessage('ai', result.data.reply);
+                    })
+                    .catch(function () {
+                        loadingBubble.remove();
+                        addMessage('ai', 'Maaf, ada masalah. Coba lagi ya.');
+                    });
+            });
+        })();
+    </script>
 </body>
 
 </html>

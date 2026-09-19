@@ -35,6 +35,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
 
+# Google Gemini API key for the AI chat widget (main.views.chat_with_ai).
+# Never hardcode this — set GEMINI_API_KEY in your .env file.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
