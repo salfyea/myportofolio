@@ -2,7 +2,7 @@
 
 from django.forms import ModelForm, TextInput, Textarea, URLInput
 
-from main.models import Project
+from main.models import Project, Skill
 
 
 class ProjectForm(ModelForm):
@@ -53,6 +53,44 @@ class ProjectForm(ModelForm):
             "project_image_url": URLInput(
                 attrs={
                     "placeholder": "https://drive.google.com/thumbnail?id=...",
+                }
+            ),
+        }
+
+
+class SkillForm(ModelForm):
+    """Form used to create/edit a ``Skill``."""
+
+    class Meta:
+        model = Skill
+        fields = [
+            "name",
+            "icon_url",
+            "category",
+        ]
+
+        labels = {
+            "name": "Nama Skill",
+            "icon_url": "URL Icon",
+            "category": "Kategori",
+        }
+
+        widgets = {
+            "name": TextInput(
+                attrs={
+                    "placeholder": "Nama skill",
+                    "maxlength": 100,
+                }
+            ),
+            "icon_url": URLInput(
+                attrs={
+                    "placeholder": "https://cdn.simpleicons.org/...",
+                }
+            ),
+            "category": TextInput(
+                attrs={
+                    "placeholder": "Contoh: Tools",
+                    "maxlength": 50,
                 }
             ),
         }
