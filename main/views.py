@@ -110,6 +110,14 @@ def update_project(request, project_id):
     return render(request, "projects_form.html", context)
 
 
+def get_skills_json(request):
+    """Return skills as JSON."""
+    skills = Skill.objects.all()
+    skills_json = serializers.serialize("json", skills)
+
+    return HttpResponse(skills_json, content_type="application/json")
+
+
 def show_skills_manage(request):
     """Render the skills management page listing every Skill."""
     context = {
