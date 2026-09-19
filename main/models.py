@@ -57,3 +57,16 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Skill(models.Model):
+    """A skill or tool shown in the Skills section."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    icon_url = models.URLField()
+    category = models.CharField(max_length=50, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
