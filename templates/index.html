@@ -126,30 +126,15 @@
     <div class="container">
         <h2 class="section-title">Skills</h2>
 
-        <div class="card-grid">
-            <article class="card skill-card">
-                <h3>Product Management</h3>
-                <p>
-                    Product Strategy, User Research, Market Analysis,
-                    Agile Methodologies, Roadmapping, Go-To-Market Strategy.
-                </p>
-            </article>
-
-            <article class="card skill-card">
-                <h3>Technology</h3>
-                <p>
-                    Python, JavaScript, TypeScript, React, Next.js,
-                    Supabase, Docker, Git &amp; GitHub.
-                </p>
-            </article>
-
-            <article class="card skill-card">
-                <h3>Tools</h3>
-                <p>
-                    Figma, Notion, Jira, Google Analytics,
-                    Amplitude, Mixpanel, Posthog.
-                </p>
-            </article>
+        <div class="skills-marquee-wrap">
+            <div class="skills-marquee-track">
+                {% for skill in skill_list %}
+                    <div class="skill-badge"><img src="{{ skill.icon_url }}" alt="{{ skill.name }}"><span>{{ skill.name }}</span></div>
+                {% endfor %}
+                {% for skill in skill_list %}
+                    <div class="skill-badge" aria-hidden="true"><img src="{{ skill.icon_url }}" alt=""><span>{{ skill.name }}</span></div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </section>

@@ -194,6 +194,12 @@ Untuk memperbarui Tugas 1 pada proyek yang sudah berjalan, gunakan versi terbaru
 
    Kedua perintah tersebut juga diperlukan ketika menambahkan field baru, misalnya field `github_url` bertipe `URLField` pada model `Project`. Ini hanya contoh perubahan struktur model. Menambahkan atau mengubah isi data project melalui Django Admin tidak memerlukan migration karena struktur tabelnya tetap samaaa
 
+### Tugas 3
+
+1. Menggunakan ModelForm pada Djanggo alih-alih membuat form HTML secara manual adalah karena xxx, diwajibkan menambahkan {% csrf_token %} karena itu memberikan akses
+2. JSON lebih disukai dalam pengembangan aplikasi modern dibandingkan XML karena xxx
+3. Jelaskan alur yang terjadi saat kamu menggunakan fungsi view untuk mengembalikan data portofoliomu dalam bentuk JSON. Mengapa kita perlu melakukan proses serialization pada model Django sebelum datanya dikembalikan?
+
 ## AI Disclosure
 
 ### Peran AI dalam Proses Pembelajaran
