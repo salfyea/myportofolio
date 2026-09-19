@@ -217,13 +217,25 @@ main {
 }
 
 .social-link {
-    display: inline-block;
-    padding: .5rem 1rem;
-    background: var(--ink);
-    color: var(--white);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
     text-decoration: none;
     transition: var(--transition);
-    border-radius: var(--radius);
+}
+
+.social-link:hover,
+.social-link:focus-visible {
+    color: var(--accent-dark);
+    background: none;
+    transform: translateY(-3px);
+}
+
+.social-icon {
+    width: 2.4rem;
+    height: 2.4rem;
+    fill: currentColor;
 }
 
 .social-link:hover {
@@ -501,6 +513,66 @@ a:focus-visible {
 
 .button-danger:hover {
     background: #E58CA5;
+}
+
+/* SKILLS MANAGE PAGE */
+.skills-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 .8rem;
+}
+
+.skills-table th {
+    text-align: left;
+    padding: 0 1.2rem .5rem;
+    color: #8A6470;
+    font-size: .9rem;
+    letter-spacing: .04em;
+}
+
+.skills-table td {
+    background: var(--white);
+    padding: 1rem 1.2rem;
+    vertical-align: middle;
+}
+
+.skills-table tr td:first-child {
+    border-radius: 12px 0 0 12px;
+}
+
+.skills-table tr td:last-child {
+    border-radius: 0 12px 12px 0;
+}
+
+.skills-table__actions {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+}
+
+.skills-table__actions form {
+    margin: 0;
+}
+
+.skills-json-section {
+    margin-top: 3rem;
+    padding-top: 3rem;
+    border-top: 1px solid rgba(0, 0, 0, .08);
+}
+
+.skills-json-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+}
+
+.skills-json-list li {
+    background: var(--white);
+    padding: 1rem 1.2rem;
+    border-radius: 12px;
 }
 
 /* PROJECT PAGE */

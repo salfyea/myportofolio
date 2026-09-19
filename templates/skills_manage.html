@@ -63,6 +63,55 @@
             </p>
         {% endif %}
 
+        <div class="skills-json-section">
+            <h2 class="section-title">Data dari JSON (live)</h2>
+            <div id="skills-json-output"></div>
+        </div>
+
     </div>
 </section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const outputEl = document.getElementById("skills-json-output");
+
+        fetch("{% url 'main:get_skills_json' %}")
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error("Gagal mengambil data (status " + response.status + ")");
+                }
+                return response.json();
+            })
+            .then(function (skills) {
+                outputEl.innerHTML = "";
+
+                if (!skills || skills.length === 0) {
+                    const emptyEl = document.createElement("p");
+                    emptyEl.className = "empty-state";
+                    emptyEl.textContent = "Belum ada skill yang ditambahkan.";
+                    outputEl.appendChild(emptyEl);
+                    return;
+                }
+
+                const list = document.createElement("ul");
+                list.className = "skills-json-list";
+
+                skills.forEach(function (item) {
+                    const fields = item.fields || {};
+                    const listItem = document.createElement("li");
+                    listItem.textContent = fields.name + " - " + fields.category;
+                    list.appendChild(listItem);
+                });
+
+                outputEl.appendChild(list);
+            })
+            .catch(function (error) {
+                outputEl.innerHTML = "";
+                const errorEl = document.createElement("p");
+                errorEl.className = "error-state";
+                errorEl.textContent = "Gagal memuat data skill: " + error.message;
+                outputEl.appendChild(errorEl);
+            });
+    });
+</script>
 {% endblock %}
