@@ -13,36 +13,123 @@
             method="post"
             action="{% if project %}{% url 'main:update_project' project.id %}{% else %}{% url 'main:create_project' %}{% endif %}"
             class="project-form"
+            id="project-form"
         >
             {% csrf_token %}
+            {{ form.secret_key }}
 
-            {% for field in form %}
+            <div id="form-gate" class="form-gate">
                 <div class="form-group">
-                    <label for="{{ field.id_for_label }}">
-                        {{ field.label }}
-                    </label>
-
-                    {{ field }}
-
-                    {% for error in field.errors %}
-                        <p class="form-error">{{ error }}</p>
-                    {% endfor %}
+                    <label for="gate-password">Kode Rahasia</label>
+                    <input
+                        type="password"
+                        id="gate-password"
+                        placeholder="Masukkan kode rahasia untuk mengedit"
+                        autocomplete="off"
+                    >
                 </div>
-            {% endfor %}
 
-            <div class="form-actions">
-                <button type="submit" class="button">
-                    {% if project %}Simpan Perubahan{% else %}Tambah Project{% endif %}
+                <button type="button" id="gate-submit" class="button">
+                    Lanjutkan
                 </button>
 
-                <a
-                    href="{% url 'main:show_projects' %}"
-                    class="button button-secondary"
-                >
-                    Batal
-                </a>
+                <p id="gate-error" class="form-error"></p>
+            </div>
+
+            <div id="form-fields" class="form-fields" hidden>
+                {% for field in form %}
+                    {% if field.name != "secret_key" %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+
+                            {{ field }}
+
+                            {% for error in field.errors %}
+                                <p class="form-error">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <div class="form-actions">
+                    <button type="submit" class="button">
+                        {% if project %}Simpan Perubahan{% else %}Tambah Project{% endif %}
+                    </button>
+
+                    <a
+                        href="{% url 'main:show_projects' %}"
+                        class="button button-secondary"
+                    >
+                        Batal
+                    </a>
+                </div>
             </div>
         </form>
     </div>
 </section>
+
+<script>
+    (function () {
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+            return match ? decodeURIComponent(match[1]) : null;
+        }
+
+        const gate = document.getElementById('form-gate');
+        const fields = document.getElementById('form-fields');
+        const gateInput = document.getElementById('gate-password');
+        const gateSubmit = document.getElementById('gate-submit');
+        const gateError = document.getElementById('gate-error');
+        const secretInput = document.getElementById('id_secret_key');
+
+        function unlock() {
+            const value = gateInput.value;
+            if (!value) {
+                gateInput.focus();
+                return;
+            }
+
+            gateError.textContent = '';
+            gateSubmit.disabled = true;
+
+            fetch("{% url 'main:verify_secret_key' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ secret_key: value }),
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    gateSubmit.disabled = false;
+
+                    if (!data.valid) {
+                        gateError.textContent = 'Kode rahasia salah.';
+                        return;
+                    }
+
+                    secretInput.value = value;
+                    gate.hidden = true;
+                    fields.hidden = false;
+                })
+                .catch(function () {
+                    gateSubmit.disabled = false;
+                    gateError.textContent = 'Gagal memverifikasi kode, coba lagi.';
+                });
+        }
+
+        gateSubmit.addEventListener('click', unlock);
+        gateInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                unlock();
+            }
+        });
+    })();
+</script>
 {% endblock %}

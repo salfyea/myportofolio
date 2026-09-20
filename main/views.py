@@ -153,10 +153,13 @@ def create_project(request):
     """Show and process the "add project" form."""
     form = ProjectForm(request.POST or None)
 
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Project baru berhasil ditambahkan!")
-        return redirect("main:show_projects")
+    if request.method == "POST":
+        if not settings.PORTFOLIO_EDIT_KEY or request.POST.get("secret_key") != settings.PORTFOLIO_EDIT_KEY:
+            messages.error(request, "Kode rahasia salah, project tidak ditambahkan.")
+        elif form.is_valid():
+            form.save()
+            messages.success(request, "Project baru berhasil ditambahkan!")
+            return redirect("main:show_projects")
 
     context = {
         "name": PROFILE_NAME,
@@ -170,10 +173,13 @@ def update_project(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     form = ProjectForm(request.POST or None, instance=project)
 
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Project berhasil diperbarui!")
-        return redirect("main:show_projects")
+    if request.method == "POST":
+        if not settings.PORTFOLIO_EDIT_KEY or request.POST.get("secret_key") != settings.PORTFOLIO_EDIT_KEY:
+            messages.error(request, "Kode rahasia salah, project tidak diperbarui.")
+        elif form.is_valid():
+            form.save()
+            messages.success(request, "Project berhasil diperbarui!")
+            return redirect("main:show_projects")
 
     context = {
         "name": PROFILE_NAME,
@@ -189,6 +195,24 @@ def get_skills_json(request):
     skills_json = serializers.serialize("json", skills)
 
     return HttpResponse(skills_json, content_type="application/json")
+
+
+@require_POST
+def verify_secret_key(request):
+    """Check a submitted secret key against PORTFOLIO_EDIT_KEY, without
+    saving anything. Used by the create/edit form's password gate so wrong
+    codes never even reveal the data fields. The real save views still
+    check the key again on submit — this endpoint is just for the gate UX.
+    """
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"valid": False}, status=400)
+
+    secret_key = payload.get("secret_key", "")
+    is_valid = bool(settings.PORTFOLIO_EDIT_KEY) and secret_key == settings.PORTFOLIO_EDIT_KEY
+
+    return JsonResponse({"valid": is_valid})
 
 
 @require_POST
@@ -257,10 +281,13 @@ def create_skill(request):
     """Show and process the "add skill" form."""
     form = SkillForm(request.POST or None)
 
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Skill baru berhasil ditambahkan!")
-        return redirect("main:show_skills_manage")
+    if request.method == "POST":
+        if not settings.PORTFOLIO_EDIT_KEY or request.POST.get("secret_key") != settings.PORTFOLIO_EDIT_KEY:
+            messages.error(request, "Kode rahasia salah, skill tidak ditambahkan.")
+        elif form.is_valid():
+            form.save()
+            messages.success(request, "Skill baru berhasil ditambahkan!")
+            return redirect("main:show_skills_manage")
 
     context = {
         "name": PROFILE_NAME,
@@ -274,10 +301,13 @@ def update_skill(request, skill_id):
     skill = get_object_or_404(Skill, pk=skill_id)
     form = SkillForm(request.POST or None, instance=skill)
 
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Skill berhasil diperbarui!")
-        return redirect("main:show_skills_manage")
+    if request.method == "POST":
+        if not settings.PORTFOLIO_EDIT_KEY or request.POST.get("secret_key") != settings.PORTFOLIO_EDIT_KEY:
+            messages.error(request, "Kode rahasia salah, skill tidak diperbarui.")
+        elif form.is_valid():
+            form.save()
+            messages.success(request, "Skill berhasil diperbarui!")
+            return redirect("main:show_skills_manage")
 
     context = {
         "name": PROFILE_NAME,
@@ -292,8 +322,11 @@ def delete_skill(request, skill_id):
     skill = get_object_or_404(Skill, pk=skill_id)
 
     if request.method == "POST":
-        skill.delete()
-        messages.success(request, "Skill berhasil dihapus!")
+        if not settings.PORTFOLIO_EDIT_KEY or request.POST.get("secret_key") != settings.PORTFOLIO_EDIT_KEY:
+            messages.error(request, "Kode rahasia salah, skill tidak dihapus.")
+        else:
+            skill.delete()
+            messages.success(request, "Skill berhasil dihapus!")
 
     return redirect("main:show_skills_manage")
 
@@ -303,7 +336,10 @@ def delete_project(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
     if request.method == "POST":
-        project.delete()
-        messages.success(request, "Project berhasil dihapus!")
+        if not settings.PORTFOLIO_EDIT_KEY or request.POST.get("secret_key") != settings.PORTFOLIO_EDIT_KEY:
+            messages.error(request, "Kode rahasia salah, project tidak dihapus.")
+        else:
+            project.delete()
+            messages.success(request, "Project berhasil dihapus!")
 
     return redirect("main:show_projects")

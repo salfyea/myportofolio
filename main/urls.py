@@ -16,6 +16,7 @@ from main.views import (
     update_skill,
     delete_skill,
     chat_with_ai,
+    verify_secret_key,
 )
 
 app_name = "main"
@@ -34,4 +35,5 @@ urlpatterns = [
     path("skills/<uuid:skill_id>/edit/", update_skill, name="update_skill"),
     path("skills/<uuid:skill_id>/delete/", delete_skill, name="delete_skill"),
     path("api/chat/", chat_with_ai, name="chat_with_ai"),
+    path("api/verify-secret/", verify_secret_key, name="verify_secret_key"),
 ]

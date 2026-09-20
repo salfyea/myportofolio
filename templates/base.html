@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=8">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=9">
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -32,6 +32,18 @@
             </nav>
         </div>
     </header>
+
+    {% if messages %}
+        <div class="container">
+            <ul class="django-messages">
+                {% for message in messages %}
+                    <li class="django-message django-message--{{ message.tags }}">
+                        {{ message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
 
     <main>
         {% block content %}{% endblock %}

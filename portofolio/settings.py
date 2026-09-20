@@ -39,6 +39,10 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # Never hardcode this — set GEMINI_API_KEY in your .env file.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Shared secret required to create/edit/delete Projects and Skills, since
+# there's no auth/session system yet. Set PORTFOLIO_EDIT_KEY in your .env file.
+PORTFOLIO_EDIT_KEY = os.getenv("PORTFOLIO_EDIT_KEY")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

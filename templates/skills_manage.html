@@ -39,19 +39,7 @@
                                     Edit
                                 </a>
 
-                                <form
-                                    method="post"
-                                    action="{% url 'main:delete_skill' skill.id %}"
-                                >
-                                    {% csrf_token %}
-
-                                    <button
-                                        type="submit"
-                                        class="button button-danger"
-                                    >
-                                        Hapus
-                                    </button>
-                                </form>
+                                {% include "components/skill_delete_modal.html" with skill=skill %}
                             </td>
                         </tr>
                     {% endfor %}

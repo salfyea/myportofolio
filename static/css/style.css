@@ -247,6 +247,31 @@ main {
     background: var(--accent-dark);
 }
 
+/* DJANGO MESSAGES */
+.django-messages {
+    list-style: none;
+    margin: 1.5rem auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+
+.django-message {
+    padding: .75rem 1.2rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+}
+
+.django-message--success {
+    background: #E4F5E9;
+    color: #1F7A45;
+}
+
+.django-message--error {
+    background: #FBE1E1;
+    color: #B42318;
+}
+
 /* CONTENT SECTION GENERAL STYLE */
 .experience-section,
 .projects-section,
@@ -483,6 +508,10 @@ a:focus-visible {
     flex-wrap: wrap;
 }
 
+.form-gate {
+    max-width: 360px;
+}
+
 /* BUTTONS */
 .button {
     display: inline-block; /* avoids overlap with preceding text */
@@ -626,7 +655,7 @@ a:focus-visible {
 }
 
 /* DELETE MODAL */
-.project-delete-modal {
+.delete-modal {
     display: none;
     position: fixed;
     inset: 0;
@@ -641,18 +670,18 @@ a:focus-visible {
     justify-content: center;
 }
 
-.project-delete-modal:popover-open {
+.delete-modal:popover-open {
     display: flex;
 }
 
-.project-delete-modal__backdrop {
+.delete-modal__backdrop {
     position: absolute;
     inset: 0;
     border: 0;
     background: rgba(0, 0, 0, 0.55);
 }
 
-.project-delete-modal__content {
+.delete-modal__content {
     position: relative;
     z-index: 1;
     width: min(100%, 480px);
@@ -662,7 +691,12 @@ a:focus-visible {
     border-radius: var(--radius);
 }
 
-.project-delete-modal__actions {
+.delete-modal__content .form-group {
+    text-align: left;
+    margin: 1.25rem 0 0;
+}
+
+.delete-modal__actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;

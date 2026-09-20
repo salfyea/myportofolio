@@ -1,45 +1,45 @@
 <button
     type="button"
     class="button button-danger"
-    popovertarget="delete-project-{{ project.id }}"
+    popovertarget="delete-skill-{{ skill.id }}"
 >
     Hapus
 </button>
 
 <div
-    id="delete-project-{{ project.id }}"
+    id="delete-skill-{{ skill.id }}"
     class="delete-modal"
     popover="auto"
 >
     <button
         type="button"
         class="delete-modal__backdrop"
-        popovertarget="delete-project-{{ project.id }}"
+        popovertarget="delete-skill-{{ skill.id }}"
         popovertargetaction="hide"
         aria-label="Tutup"
     ></button>
 
     <div class="delete-modal__content">
-        <h2>Hapus Project?</h2>
+        <h2>Hapus Skill?</h2>
 
         <p>
             Apakah kamu yakin ingin menghapus
-            <strong>{{ project.title }}</strong>?
+            <strong>{{ skill.name }}</strong>?
         </p>
 
         <form
             method="post"
-            action="{% url 'main:delete_project' project.id %}"
+            action="{% url 'main:delete_skill' skill.id %}"
         >
             {% csrf_token %}
 
             <div class="form-group">
-                <label for="delete-project-secret-{{ project.id }}">
+                <label for="delete-skill-secret-{{ skill.id }}">
                     Kode Rahasia
                 </label>
                 <input
                     type="password"
-                    id="delete-project-secret-{{ project.id }}"
+                    id="delete-skill-secret-{{ skill.id }}"
                     name="secret_key"
                     placeholder="Masukkan kode rahasia"
                     required
@@ -50,7 +50,7 @@
                 <button
                     type="button"
                     class="button button-secondary"
-                    popovertarget="delete-project-{{ project.id }}"
+                    popovertarget="delete-skill-{{ skill.id }}"
                     popovertargetaction="hide"
                 >
                     Batal
