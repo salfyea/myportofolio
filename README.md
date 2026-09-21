@@ -13,7 +13,7 @@ Repositori ini digunakan untuk mengerjakan seluruh rangkaian tugas dan tutorial 
   <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="GitHub">
 </p>
 
-[Identitas](#identitas-diri) · [Tentang Proyek](#tentang-proyek) · [Menjalankan Proyek](#menjalankan-proyek) · [Refleksi Tugas 1](#tugas-1) · [Penggunaan AI](#penggunaan-ai)
+[Identitas](#identitas-diri) · [Tentang Proyek](#tentang-proyek) · [Perkembangan](#perkembangan-proyek) · [Menjalankan Proyek](#menjalankan-proyek) · [Refleksi Mingguan](#refleksi-mingguan) · [Penggunaan AI](#penggunaan-ai)
 
 ---
 
@@ -27,102 +27,282 @@ Repositori ini digunakan untuk mengerjakan seluruh rangkaian tugas dan tutorial 
 | Program Studi | S1 Sistem Informasi |
 | Institusi | Universitas Indonesia |
 
+---
+
 ## Tentang Proyek
 
-Website ini menyajikan profil, pengalaman, proyek, dan keahlian saya dalam satu halaman. Proyek dikembangkan bertahap sepanjang semester dengan melanjutkan kode dari tutorial dan tugas sebelumnya
+Website ini merupakan portofolio pribadi yang menampilkan profil, pengalaman, proyek, dan keahlian saya dalam satu aplikasi web.
 
-Pada tahap Tugas 1, konten halaman masih ditulis langsung dalam **HTML5** dan tampilannya diatur menggunakan **CSS3**. Django digunakan untuk menyajikan halaman melalui view dan routing sederhana sesuai tutorial. Konten portofolio belum dikelola melalui model database, dan halaman ini tidak menggunakan JavaScript atau framework frontend
+Proyek ini dikerjakan secara **bertahap sepanjang semester** dengan melanjutkan hasil dari tutorial dan tugas sebelumnya. Karena itu, README ini juga diperlakukan sebagai dokumentasi yang terus berkembang: setiap tugas baru akan menambahkan fitur, refleksi, catatan implementasi, serta pembaruan setup tanpa menghilangkan riwayat perkembangan sebelumnya.
+
+Pada tahap awal, portofolio masih bersifat statis. Seiring bertambahnya materi Django, project berkembang menjadi aplikasi yang menggunakan **Model-View-Template (MVT)**, database, form, CRUD, JSON API, dan fitur interaktif.
+
+### Arah Perkembangan Proyek
+
+```text
+Static Portfolio
+      ↓
+Django MVT
+      ↓
+Database-backed Content
+      ↓
+Dynamic Projects & Skills
+      ↓
+ModelForm + CRUD
+      ↓
+JSON Delivery
+      ↓
+Interactive Frontend
+      ↓
+Fitur tambahan & pengembangan berikutnya
+```
 
 ### Teknologi dan Fungsinya
 
 | Teknologi | Penggunaan dalam proyek |
 | --- | --- |
-| HTML5 | Struktur konten dan elemen semantik halaman |
-| CSS3 | Warna, tipografi, Grid, Flexbox, media query, dan efek hover |
-| Python dan Django | Menjalankan proyek serta menghubungkan URL dengan template |
-| Git dan GitHub | Mencatat perubahan kode dan menyimpan repositori untuk pengumpulan |
+| **HTML5** | Struktur konten dan elemen semantik halaman |
+| **CSS3** | Warna, tipografi, Grid, Flexbox, media query, dan efek hover |
+| **JavaScript** | Interaksi frontend dan pengambilan data JSON |
+| **Python** | Bahasa pemrograman backend |
+| **Django** | Routing, view, model, ORM, form, template, dan logika aplikasi |
+| **Git** | Mencatat perubahan kode dan membantu pengembangan bertahap |
+| **GitHub** | Menyimpan repositori dan dokumentasi proyek |
+| **Google Gemini API** | Mendukung fitur AI Chat Widget melalui backend |
+
+---
+
+## Perkembangan Proyek
+
+Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
+
+| Tahap | Lingkup Pengembangan |
+| --- | --- |
+| **Tutorial 1** | Halaman About Me serta penghubungan view, URL, template, dan static files sesuai tutorial. |
+| **Tutorial 2** | Implementasi konsep MVT Django melalui model `Experience`, migration database, queryset pada view, template dinamis, routing URL, base template, serta unit testing. |
+| **Tugas 1** | Penambahan Experience, Featured Projects, dan Skills; pengembangan styling kartu; serta perbaikan layout mobile agar elemen tidak bertumpuk dan konten lebih mudah dibaca. |
+| **Tugas 2** | Pengembangan Featured Projects berbasis database menggunakan model `Project`, migration, fixture, queryset, halaman Projects terpisah, navigasi, template dinamis dengan empty state, serta pengujian fitur. |
+| **Tutorial 3** | Pembuatan skeleton `base.html` sebagai root template, penerapan `ModelForm` untuk `Project`, serta implementasi create, update, delete, dan JSON delivery untuk `Project`. |
+| **Tugas 3** | Refactor template agar extend dari `base.html`; pembuatan model `Skill` menggantikan data Skills yang sebelumnya hardcoded; `ModelForm`, create, update, delete, JSON delivery, dan penampilan data hasil deserialisasi JSON secara langsung pada halaman kelola Skills. |
+| **Tugas berikutnya** | Akan ditambahkan pada bagian ini beserta perubahan fitur, konsep yang dipelajari, dan catatan implementasinya. |
+
+### Timeline Implementasi
+
+```mermaid
+flowchart LR
+    A[Tutorial 1<br/>HTML + CSS + Django dasar]
+    B[Tutorial 2<br/>MVT + Model Experience]
+    C[Tugas 1<br/>Responsive Portfolio]
+    D[Tugas 2<br/>Project Database]
+    E[Tutorial 3<br/>ModelForm + CRUD + JSON]
+    F[Tugas 3<br/>Skill + CRUD + Live JSON]
+    G[Tugas Berikutnya<br/>Pengembangan lanjutan]
+
+    A --> B --> C --> D --> E --> F --> G
+```
+
+---
 
 ## Berkas Utama
 
-Struktur berikut mengikuti penempatan berkas pada Tutorial 01:
+Struktur berkas akan berkembang seiring bertambahnya fitur, tetapi tanggung jawab utamanya tetap dipisahkan agar mudah dipahami.
 
 | Lokasi | Fungsi |
 | --- | --- |
 | `manage.py` | Menjalankan perintah pengelolaan proyek Django |
-| `portofolio/settings.py` | Konfigurasi proyek, template, dan static files |
-| `portofolio/urls.py` | Pemetaan URL halaman |
-| `portofolio/views.py` | View yang menyajikan template portofolio |
-| `templates/index.html` | Struktur dan konten website |
-| `static/css/style.css` | Seluruh styling halaman |
-| `static/img/SalwaAlifiaPutri.jpeg` | Foto profil yang dirujuk dalam HTML |
-| `requirements.txt` | Dependensi Python proyek |
-| `README.md` | Dokumentasi dan refleksi mingguan |
+| `portofolio/settings.py` | Konfigurasi proyek, template, static files, dan pengaturan lainnya |
+| `portofolio/urls.py` | Pemetaan URL utama proyek |
+| `main/models.py` | Definisi model dan struktur data |
+| `main/views.py` | Logika request dan response |
+| `main/forms.py` | Definisi `ModelForm` |
+| `main/tests.py` | Pengujian fitur |
+| `templates/` | HTML template |
+| `static/` | CSS, gambar, dan aset statis |
+| `requirements.txt` | Dependensi Python |
+| `README.md` | Dokumentasi proyek, progres, refleksi, dan penggunaan AI |
 
-## Menjalankan Proyek
+---
 
-Gunakan repositori proyek dari Tutorial 01. Untuk salinan baru, clone repositori melalui alamat pada tombol **Code** di GitHub, lalu buka terminal pada folder yang berisi `manage.py`.
+## Arsitektur Aplikasi
 
-### 1. Siapkan Virtual Environment
+Proyek menggunakan pola **Model-View-Template (MVT)** Django.
 
-Jika folder `env` belum tersedia, jalankan:
+```mermaid
+flowchart TD
+    U[Pengguna / Browser]
+
+    U --> R[URL Routing]
+    R --> V[Django View]
+
+    V --> M[Model / Django ORM]
+    M --> DB[(Database)]
+
+    V --> T[Template]
+    T --> H[HTML + CSS + JavaScript]
+    H --> U
+
+    V --> API[JSON Endpoint]
+    API --> U
+```
+
+Secara sederhana, terdapat dua jalur utama:
+
+### Server-rendered page
+
+```text
+Browser
+   ↓
+urls.py
+   ↓
+View
+   ↓
+Model / ORM
+   ↓
+Database
+   ↓
+Template
+   ↓
+HTML Response
+   ↓
+Browser
+```
+
+### JSON delivery
+
+```text
+Browser
+   ↓
+GET /api/skills/
+   ↓
+Django View
+   ↓
+Django ORM
+   ↓
+QuerySet
+   ↓
+Serialization
+   ↓
+JSON Response
+   ↓
+JavaScript
+   ↓
+DOM
+```
+
+---
+
+# Menjalankan Proyek
+
+## 1. Clone Repository
+
+Clone repository dari GitHub, kemudian buka terminal pada folder yang berisi `manage.py`.
+
+```bash
+git clone <repository-url>
+cd <project-folder>
+```
+
+## 2. Siapkan Virtual Environment
+
+Jika folder `env` belum tersedia:
 
 ```bash
 python -m venv env
 ```
 
-### 2. Aktifkan Virtual Environment
+## 3. Aktifkan Virtual Environment
 
-**Windows PowerShell:**
+### Windows PowerShell
 
 ```powershell
 .\env\Scripts\Activate.ps1
 ```
 
-**Windows Command Prompt:**
+### Windows Command Prompt
 
 ```bat
 env\Scripts\activate.bat
 ```
 
-**macOS / Linux:**
+### macOS / Linux
 
 ```bash
 source env/bin/activate
 ```
 
-### 3. Pasang Dependensi
+## 4. Pasang Dependensi
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-Siapkan konfigurasi environment lokal sesuai Tutorial 0 dan pengaturan pada `settings.py`. Gunakan versi dependensi yang tercantum dalam proyek.
+## 5. Siapkan Environment Variable
 
-### 4. Periksa dan Jalankan Proyek
+Konfigurasi lokal mengikuti kebutuhan project dan `settings.py`.
+
+Contoh nilai sensitif yang **tidak boleh ditulis langsung ke source code**:
+
+```text
+DJANGO_SECRET_KEY=...
+GEMINI_API_KEY=...
+PORTFOLIO_EDIT_PASSWORD=...
+```
+
+Gunakan environment variable lokal atau mekanisme secret yang disediakan platform deployment.
+
+> Jangan commit file `.env`, API key, password, atau secret key ke repository publik.
+
+## 6. Jalankan Pemeriksaan Django
 
 ```bash
 python manage.py check
+```
+
+## 7. Terapkan Migration
+
+Jika project menggunakan database yang membutuhkan migration:
+
+```bash
+python manage.py migrate
+```
+
+## 8. Jalankan Development Server
+
+```bash
 python manage.py runserver
 ```
 
-### 5. Buka Website
+Kemudian buka:
 
-Akses [http://localhost:8000/](http://localhost:8000/) melalui browser.
+```text
+http://localhost:8000/
+```
 
-Pastikan CSS dan foto profil termuat. Halaman dijalankan melalui server Django, bukan dengan membuka `index.html` langsung dari file manager.
+Pastikan CSS, gambar, template, dan fitur yang memerlukan backend berjalan melalui server Django, bukan dengan membuka file HTML langsung dari file manager.
 
-Untuk memperbarui Tugas 1 pada proyek yang sudah berjalan, gunakan versi terbaru `templates/index.html` dan `static/css/style.css`. Setup awal tidak perlu diulang jika environment dan dependensi sudah tersedia.
+### Setup Mingguan
 
-## Perkembangan Mingguan
+Karena repository ini akan terus dikembangkan, setup awal tidak perlu diulang setiap minggu selama virtual environment dan dependensi masih tersedia.
 
-| Tahap | Lingkup Pengembangan |
-| --- | --- |
-| Tutorial 1 | Halaman About Me serta penghubungan view, URL, template, dan static files sesuai tutorial. |
-| Tutorial 2 | Implementasi konsep MVT Django melalui pembuatan model Experience, migration database, queryset pada view, template dinamis, routing URL, base template, serta unit testing. |
-| Tugas 1 | Penambahan Experience, Featured Projects, dan Skills; pengembangan styling kartu; serta perbaikan layout mobile agar elemen tidak bertumpuk dan konten lebih mudah dibaca. |
-| Tugas 2 | Pengembangan fitur Featured Projects berbasis database menggunakan model Project, migration, fixture, queryset, halaman Projects terpisah, navigasi antarhalaman, template dinamis dengan empty state, serta pengujian fitur. |
+Untuk perubahan fitur, alur yang disarankan:
 
-## Refleksi Mingguan
+```text
+Tarik perubahan terbaru
+        ↓
+Aktifkan virtual environment
+        ↓
+Install dependency baru (jika ada)
+        ↓
+python manage.py check
+        ↓
+python manage.py migrate (jika ada perubahan model)
+        ↓
+python manage.py test
+        ↓
+python manage.py runserver
+```
+
+# Refleksi Mingguan
 
 ### Tugas 1
 
@@ -194,62 +374,371 @@ Untuk memperbarui Tugas 1 pada proyek yang sudah berjalan, gunakan versi terbaru
 
    Kedua perintah tersebut juga diperlukan ketika menambahkan field baru, misalnya field `github_url` bertipe `URLField` pada model `Project`. Ini hanya contoh perubahan struktur model. Menambahkan atau mengubah isi data project melalui Django Admin tidak memerlukan migration karena struktur tabelnya tetap samaaa
 
+
 ### Tugas 3
 
-1. Menggunakan ModelForm pada Djanggo alih-alih membuat form HTML secara manual adalah karena xxx, diwajibkan menambahkan {% csrf_token %} karena itu memberikan akses
-2. JSON lebih disukai dalam pengembangan aplikasi modern dibandingkan XML karena xxx
-3. Jelaskan alur yang terjadi saat kamu menggunakan fungsi view untuk mengembalikan data portofoliomu dalam bentuk JSON. Mengapa kita perlu melakukan proses serialization pada model Django sebelum datanya dikembalikan?
+1. **Mengapa menggunakan `ModelForm` dan mengapa perlu `{% csrf_token %}`?**
+
+   Saya menggunakan `ModelForm` daripada membuat form HTML manual karena field form dapat mengikuti definisi model yang sudah dibuat
+
+   Dengan pendekatan ini, Django dapat membantu membuat field dan validasi berdasarkan tipe field pada model. Misalnya, `URLField` dapat melakukan validasi terkait format URL dan `CharField` mengikuti batas `max_length`
+
+   `ModelForm` juga menyediakan `save()` untuk membuat atau memperbarui instance model. Saya tidak perlu menulis ulang seluruh proses pemetaan data dari `request.POST` ke object model
+
+   Dengan kata lain seperti inii
+
+   ```text
+   Model
+   ↓
+   ModelForm
+   ↓
+   Validasi
+   ↓
+   save()
+   ↓
+   Database
+   ```
+
+   Pendekatan ini mengurangi duplikasi aturan data dan membantu menjaga model sebagai sumber utama definisi struktur data
+
+   ### CSRF Protection
+
+   Form yang melakukan perubahan data menggunakan `POST`, misalnya
+
+   ```text
+   Create
+   Update
+   Delete
+   ```
+
+   Karena itu saya menambahkan
+
+   ```django
+   {% csrf_token %}
+   ```
+
+   CSRF protection membantu Django memverifikasi bahwa request perubahan data berasal dari form yang sesuai dengan aplikasi, sehingga aplikasi memiliki perlindungan terhadap pola serangan **Cross-Site Request Forgery**
+
+   ```mermaid
+   sequenceDiagram
+      participant U as User
+      participant B as Browser
+      participant D as Django
+
+      U->>B: Submit form
+      B->>D: POST + CSRF token
+      D->>D: Verifikasi token
+
+      alt Token valid
+         D->>D: Proses perubahan data
+         D-->>B: Response berhasil
+      else Token tidak valid
+         D-->>B: Request ditolak
+      end
+   ```
+2. **Mengapa JSON digunakan dibandingkan XML?**
+
+   Dalam project ini, JSON lebih praktis untuk komunikasi antara backend Django dan JavaScript karena strukturnya menggunakan object dan array yang mudah diproses oleh JavaScript
+
+   Contoh:
+
+   ```json
+   {
+   "name": "Python",
+   "level": "Advanced"
+   }
+   ```
+
+   Di sisi frontend, response dapat diproses dengan
+
+   ```javascript
+   fetch("/api/skills/")
+   .then(response => response.json())
+   .then(data => {
+         // data digunakan untuk render ke halaman
+   });
+   ```
+
+   JSON juga memiliki sintaks yang lebih ringkas dibandingkan XML untuk struktur data sederhana.
+
+   Contoh XML
+
+   ```xml
+   <skill>
+      <name>Python</name>
+      <level>Advanced</level>
+   </skill>
+   ```
+
+   Perbedaannya bukan berarti XML tidak digunakan lagi. XML tetap relevan pada sistem tertentu yang membutuhkan karakteristik seperti namespace dan schema, tetapi untuk kebutuhan frontend-backend sederhana pada project ini, JSON lebih praktis
+
+3. **Mengapa perlu serialization pada model Django?**
+
+   Ketika view mengambil
+
+   ```python
+   Skill.objects.all()
+   ```
+
+   hasilnya adalah `QuerySet` yang berisi object model Django
+
+   Object tersebut tidak dapat langsung dikirim sebagai JSON karena JSON tidak memahami object Python/Django beserta method dan state internalnya
+
+   Karena itu, diperlukan proses **serialization** untuk mengubah data model menjadi struktur yang dapat direpresentasikan dalam JSON
+
+   ```mermaid
+   flowchart LR
+      A[(Database)]
+      B[Django ORM]
+      C[QuerySet]
+      D[Serializer]
+      E[JSON Response]
+      F[JavaScript]
+      G[DOM]
+
+      A --> B --> C --> D --> E --> F --> G
+   ```
+
+   Contoh sederhana pada backend
+
+   ```python
+   from django.core.serializers import serialize
+
+   data = serialize("json", Skill.objects.all())
+   ```
+
+   Kemudian data tersebut dikembalikan sebagai response
+
+   ```python
+   HttpResponse(
+      data,
+      content_type="application/json"
+   )
+   ```
+
+   Di sisi client, JavaScript menerima response tersebut dan melakukan deserialisasi melalui
+
+   ```javascript
+   response.json()
+   ```
+
+   Sehingga alur lengkapnya adalah
+
+   ```text
+   Database
+      ↓
+   Django ORM
+      ↓
+   Model / QuerySet
+      ↓
+   Serialization
+      ↓
+   JSON
+      ↓
+   Deserialization
+      ↓
+   JavaScript Object
+      ↓
+   DOM
+   ```
+
+---
+
+## Fitur Tambahan
+
+Selain requirement utama, saya menambahkan beberapa fitur tambahan sebagai bagian dari eksplorasi pengembangan project.
+
+### AI Chat Widget
+
+Widget chat dapat diakses dari halaman portofolio dan digunakan untuk bertanya mengenai pengalaman, skill, dan project yang ditampilkan.
+
+Request tidak langsung dikirim dari browser ke Gemini API. Request terlebih dahulu masuk ke endpoint backend Django:
+
+```text
+Browser
+   ↓
+Chat Widget
+   ↓
+/api/chat/
+   ↓
+Gemini API
+   ↓
+Django
+   ↓
+Chat Widget
+```
+
+API key disimpan melalui environment variable dan tidak ditulis langsung pada kode frontend :D
+
+### Proteksi Data Sederhana
+
+Untuk operasi create, update, dan delete pada Skill serta Project, project menggunakan password validation sederhana.
+
+Alurnya:
+
+```mermaid
+flowchart LR
+    A[User]
+    B[Create / Update / Delete]
+    C[Password]
+    D{Cocok?}
+    E[Proses aksi]
+    F[Aksi ditolak]
+
+    A --> B --> C --> D
+    D -->|Ya| E
+    D -->|Tidak| F
+```
+
+Mekanisme ini **bukan sistem authentication penuh** karena belum menggunakan account, session, atau permission system. Implementasi ini digunakan sebagai lapisan proteksi sederhana sesuai ruang lingkup materi yang sudah dipelajari
+
+---
+
+# Penggunaan AI
 
 ## AI Disclosure
 
-### Peran AI dalam Proses Pembelajaran
+Saya menggunakan AI sebagai **pendamping belajar, debugging assistant, dan alat untuk membantu mengeksplorasi alternatif solusi**.
 
-Saya menggunakan ChatGPT sebagai pendamping untuk mempelajari syntax HTML/CSS dan memahami cara melakukan debugging pada website portofolio. Bantuan yang diberikan mencakup penjelasan hubungan antara class HTML dan selector CSS, penggunaan Grid dan Flexbox, serta fungsi media query dalam menyesuaikan layout
+AI tidak digunakan sebagai pengganti proses implementasi dan verifikasi. Setiap saran perlu saya pahami, sesuaikan dengan struktur project, kemudian diuji kembali melalui kode dan browser.
 
-ChatGPT juga membantu mengidentifikasi masalah dan memberikan contoh revisi kode. Contohnya adalah class `.section-title` yang sudah didefinisikan dalam CSS tetapi belum diterapkan pada heading HTML, serta layout kartu yang belum memiliki pengaturan khusus untuk layar kecil
+### Tools yang Digunakan
 
-Dari penjelasan tersebut, saya memahami bahwa debugging perlu dilakukan dengan menelusuri hubungan antara struktur HTML, aturan CSS, dan perilaku yang diharapkan. Menambahkan aturan CSS saja belum cukup apabila selector-nya tidak cocok dengan elemen yang ingin diatur
+| Tools | Peran dalam proses |
+| --- | --- |
+| **ChatGPT** | Membantu memahami HTML/CSS, debugging frontend, responsive layout, dan penyusunan dokumentasi/refleksi |
+| **Claude** | Membantu memahami konsep Task 3 seperti `ModelForm`, serializer Django, JSON, CSRF, environment variable, membuat diagram dalam README.md, serta debugging backend/deployment |
 
-### Pemahaman yang Dikembangkan
+---
 
-Beberapa konsep yang dibahas selama proses pengerjaan adalah:
+## Strategi Prompting
 
-- **Hubungan HTML dan CSS:** class pada HTML harus sesuai dengan selector agar styling diterapkan pada elemen yang benar
-- **Penggunaan kembali styling:** class `.card` dapat menampung aturan bersama, sedangkan class tambahan mengatur variasi tampilan setiap jenis kartu
-- **Responsivitas:** penyesuaian desktop ke mobile perlu mempertimbangkan jumlah kolom, urutan informasi, ukuran foto, dan keterbacaan teks
-- **Pemisahan tanggung jawab:** HTML menjelaskan struktur dan makna konten, sedangkan CSS mengatur penyajiannya
-- **Aksesibilitas:** indikator fokus keyboard dan pengaturan pengurangan animasi membantu mengakomodasi kebutuhan pengguna yang berbeda
+Saya tidak hanya menggunakan satu prompt besar untuk seluruh pengerjaan. Saya menggunakan pendekatan bertahap agar masalah dapat dipahami dan diuji satu per satu.
 
-### Evaluasi Kritis terhadap AI
+```text
+1. Berikan konteks project
+        ↓
+2. Jelaskan tujuan / requirement tugas
+        ↓
+3. Tunjukkan bagian kode atau error yang relevan
+        ↓
+4. Minta penjelasan penyebab, bukan hanya jawaban
+        ↓
+5. Minta beberapa kemungkinan solusi bila perlu
+        ↓
+6. Implementasikan dan uji secara manual
+        ↓
+7. Kembali ke AI bila hasil belum sesuai
+        ↓
+8. Rapikan solusi final + dokumentasikan pemahamannya
+```
 
-Saran AI dapat menjadi titik awal untuk memahami masalah, tetapi tidak otomatis membuktikan bahwa solusi sudah benar pada proyek yang dijalankan. Sebagai contoh, penambahan media query dapat terlihat tepat ketika dibaca, tetapi tampilannya tetap perlu diperiksa melalui browser. Panjang teks, ukuran gambar, dan lebar layar dapat menghasilkan kondisi yang belum terlihat dari pemeriksaan kode saja. Demikian pula, koreksi HTML/CSS tidak membuktikan bahwa konfigurasi Django dan pemuatan static files sudah berjalan dengan benar. Karena itu, saya membedakan antara penjelasan konsep, usulan perubahan, dan hasil pengujian. Pemahaman konsep perlu diperkuat melalui dokumentasi, sedangkan keberhasilan implementasi perlu dibuktikan dengan menjalankan dan memeriksa website
 
-### Verifikasi dan Perbaikan Manual
+# Evaluasi Kritis terhadap AI
 
-- **Masalah yang saya temukan:** Pada tampilan mobile, beberapa elemen saling bertumpuk. Kartu juga terlihat terlalu sempit dan memanjang ke bawah sehingga isinya kurang nyaman dibaca (T-T)
-- **Perubahan yang saya lakukan sendiri:** Saya menyesuaikan pengaturan tampilan kartu pada CSS agar susunannya lebih sesuai dengan lebar layar mobile
-- **Alasan perubahan:** Penyesuaian dilakukan untuk memperbaiki proporsi kartu, mencegah elemen saling bertumpuk, dan meningkatkan keterbacaan konten pada layar kecil
-- **Hasil pemeriksaan:** Setelah diperiksa melalui browser pada tampilan mobile, kartu terlihat lebih proporsional, konten lebih mudah dibaca, dan susunan halaman lebih rapi. Penulisan kode juga sudah dirapikan agar lebih mudah dipahami
+Saya menyadari bahwa jawaban AI tidak otomatis benar hanya karena terlihat masuk akal atau karena kode yang diberikan dapat dijalankan.
 
-### Catatan Penggunaan
+Beberapa keterbatasan AI yang saya temukan:
 
-Bantuan ChatGPT mencakup penjelasan konsep, identifikasi masalah, contoh revisi HTML/CSS, serta penyusunan awal dokumentasi
+### 1. AI tidak mengetahui konteks project secara sempurna
 
-## Pemeriksaan Sebelum Pengumpulan
+Saran yang benar pada project Django lain belum tentu cocok dengan struktur folder, nama model, URL, atau cara implementasi pada project saya.
 
-Daftar berikut merupakan verifikasi progress saya. Tanda centang diisi setelah pemeriksaan finalisasi dilakukan
+Karena itu, saran AI perlu disesuaikan dengan kode aktual.
 
-- [✅] Nama, NPM, bio, pengalaman, dan tautan kontak sesuai data pribadi.
-- [✅] Foto tersedia dan tampil.
-- [✅] `python manage.py check` selesai tanpa masalah konfigurasi.
-- [✅] `python manage.py runserver` berhasil dan halaman dapat diakses.
-- [✅] CSS termuat serta tampilan diperiksa pada desktop, tablet, dan mobile.
-- [✅] Tidak ada scroll horizontal yang tidak diperlukan; seluruh navigasi berfungsi.
-- [✅] Fokus keyboard terlihat dan teks tetap terbaca ketika diperbesar.
-- [✅] Jawaban reflektif sudah disesuaikan dengan pemahaman serta pengalaman pribadi.
-- [✅] AI disclosure, log prompting, dan catatan pengujian sesuai proses yang sebenarnya.
-- [✅] Commit terbaru sudah di-push dan tautan commit publik dapat dibuka melalui mode Incognito.
+### 2. AI dapat memberikan solusi yang terlalu umum
 
-## Referensi
-- [Django — menjalankan development server](https://docs.djangoproject.com/en/5.2/intro/tutorial01/#the-development-server). Gunakan dokumentasi versi yang sesuai dengan dependensi proyek.
-- [Shields.io — Static Badge](https://shields.io/badges/static-badge), untuk badge teknologi pada README.
+Contohnya, solusi CSS yang secara teori benar belum tentu menghasilkan layout yang sesuai dengan desain ketika dijalankan pada viewport tertentu.
+
+Karena itu, saya tetap menggunakan browser sebagai alat verifikasi
+
+### 3. AI tidak menggantikan testing
+
+Jawaban AI tidak membuktikan bahwa:
+
+- migration berhasil;
+- endpoint mengembalikan data yang benar;
+- static files termuat;
+- layout mobile tidak bertumpuk;
+- environment variable berhasil dibaca;
+- deployment berjalan sesuai harapan.
+
+Semua hal tersebut tetap perlu diuji secara langsung dan debugging mandiri agar terlatih
+
+### 4. AI dapat menghasilkan lebih dari satu solusi
+
+Beberapa masalah memiliki banyak cara penyelesaian. Saya tidak selalu mengambil solusi pertama yang diberikan. Saya mencoba memahami trade-off-nya, menyesuaikan dengan materi kuliah, lalu memilih pendekatan yang paling sesuai dengan struktur project.
+
+---
+
+# Perbaikan Manual Setelah Menggunakan AI
+
+AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan penyesuaian dan verifikasi secara manual.
+
+| Masalah | Bantuan AI | Perbaikan / Verifikasi Manual |
+| --- | --- | --- |
+| `.section-title` tidak terhubung ke heading | Menjelaskan hubungan selector HTML-CSS | Memeriksa dan memperbaiki class pada HTML |
+| Kartu bertumpuk pada mobile | Memberi kemungkinan penyebab dan contoh media query | Menyesuaikan breakpoint dan layout lalu mengecek browser |
+| `ModelForm` dan validasi | Menjelaskan konsep | Mencocokkan field form dengan model project |
+| Serialization JSON | Menjelaskan alur model → serializer → JSON | Menguji endpoint dan response frontend |
+| Duplicate key pada context | Membantu menemukan sumber masalah | Memeriksa context aktual dan memperbaiki struktur dictionary |
+| Environment variable | Menjelaskan pola konfigurasi secret | Menyesuaikan dengan konfigurasi lokal/deployment PWS |
+
+---
+
+## Refleksi Penggunaan AI
+
+Penggunaan AI paling membantu ketika saya menggunakannya untuk **memahami alasan di balik suatu solusi**, bukan hanya meminta kode final.
+
+Perbedaan yang saya rasakan adalah:
+
+```text
+"Berikan saya kode yang benar"
+                ↓
+   Mendapatkan solusi
+                ↓
+       Pemahaman terbatas
+```
+
+dibandingkan:
+
+```text
+"Jelaskan mengapa masalah ini terjadi
+ pada kode saya dan bagaimana cara
+ menguji apakah solusinya benar"
+                ↓
+       Memahami penyebab
+                ↓
+       Mencoba solusi
+                ↓
+           Melakukan test
+                ↓
+        Memahami hasil akhir
+```
+
+Karena itu, AI saya gunakan sebagai **learning companion**. Keberhasilan suatu solusi tetap saya ukur dari implementasi dan pengujian pada project yang sebenarnya^^
+
+---
+
+# Catatan Keamanan
+
+Project ini merupakan project pembelajaran dan belum dimaksudkan sebagai aplikasi production
+
+Beberapa prinsip yang sudah diterapkan:
+
+- Form perubahan data menggunakan CSRF protection.
+- Secret/API key disimpan melalui environment variable.
+- Password untuk proteksi manual tidak ditulis langsung pada source code.
+- Mekanisme password manual dijelaskan secara terbuka sebagai **proteksi sederhana**, bukan authentication system.
+
+Untuk aplikasi production, mekanisme authentication dan authorization yang lebih lengkap tetap diperlukan.
+
+---
+
+# Referensi
+
+- [Django — The Development Server](https://docs.djangoproject.com/en/5.2/intro/tutorial01/#the-development-server)
+- [Django — Model Forms](https://docs.djangoproject.com/en/5.2/topics/forms/modelforms/)
+- [Django — Serialization](https://docs.djangoproject.com/en/5.2/topics/serialization/)
+- [Django — CSRF Protection](https://docs.djangoproject.com/en/5.2/ref/csrf/)
+- [Shields.io](https://shields.io/badges/static-badge)
