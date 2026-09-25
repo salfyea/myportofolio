@@ -11,7 +11,7 @@ from google.api_core import exceptions as google_exceptions
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
@@ -376,3 +376,9 @@ def login_user(request):
         "form": form,
     }
     return render(request, "login.html", context)
+
+
+def logout_user(request):
+    """End the current session and send the visitor back to login."""
+    logout(request)
+    return redirect("main:login")

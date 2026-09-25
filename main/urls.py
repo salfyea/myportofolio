@@ -19,6 +19,7 @@ from main.views import (
     verify_secret_key,
     register_user,
     login_user,
+    logout_user,
 )
 
 app_name = "main"
@@ -40,4 +41,5 @@ urlpatterns = [
     path("api/verify-secret/", verify_secret_key, name="verify_secret_key"),
     path("register/", register_user, name="register"),
     path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
 ]
