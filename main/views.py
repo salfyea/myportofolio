@@ -16,6 +16,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from main.forms import ProjectForm, SkillForm
@@ -102,6 +103,7 @@ def show_main(request):
         ),
         "experience_list": Experience.objects.order_by("-started_at"),
         "skill_list": Skill.objects.all(),
+        "last_login": request.COOKIES.get("last_login", "Belum pernah login"),
     }
     return render(request, "index.html", context)
 
@@ -369,7 +371,9 @@ def login_user(request):
 
     if request.method == "POST" and form.is_valid():
         login(request, form.get_user())
-        return redirect("main:show_main")
+        response = redirect("main:show_main")
+        response.set_cookie("last_login", timezone.now().strftime("%Y-%m-%d %H:%M:%S"))
+        return response
 
     context = {
         "name": PROFILE_NAME,
@@ -381,4 +385,6 @@ def login_user(request):
 def logout_user(request):
     """End the current session and send the visitor back to login."""
     logout(request)
-    return redirect("main:login")
+    response = redirect("main:login")
+    response.delete_cookie("last_login")
+    return response
