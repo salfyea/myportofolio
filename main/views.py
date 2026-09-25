@@ -11,6 +11,7 @@ from google.api_core import exceptions as google_exceptions
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.forms import UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -343,3 +344,19 @@ def delete_project(request, project_id):
             messages.success(request, "Project berhasil dihapus!")
 
     return redirect("main:show_projects")
+
+
+def register_user(request):
+    """Show and process the registration form for new visitor accounts."""
+    form = UserCreationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Akun berhasil dibuat! Silakan login.")
+        return redirect("main:login")
+
+    context = {
+        "name": PROFILE_NAME,
+        "form": form,
+    }
+    return render(request, "register.html", context)
