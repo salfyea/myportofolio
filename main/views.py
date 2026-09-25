@@ -11,6 +11,8 @@ from google.api_core import exceptions as google_exceptions
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -343,3 +345,40 @@ def delete_project(request, project_id):
             messages.success(request, "Project berhasil dihapus!")
 
     return redirect("main:show_projects")
+
+
+def register_user(request):
+    """Show and process the registration form for new visitor accounts."""
+    form = UserCreationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Akun berhasil dibuat! Silakan login.")
+        return redirect("main:login")
+
+    context = {
+        "name": PROFILE_NAME,
+        "form": form,
+    }
+    return render(request, "register.html", context)
+
+
+def login_user(request):
+    """Show and process the login form, starting a session on success."""
+    form = AuthenticationForm(request, data=request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        login(request, form.get_user())
+        return redirect("main:show_main")
+
+    context = {
+        "name": PROFILE_NAME,
+        "form": form,
+    }
+    return render(request, "login.html", context)
+
+
+def logout_user(request):
+    """End the current session and send the visitor back to login."""
+    logout(request)
+    return redirect("main:login")
