@@ -11,7 +11,8 @@ from google.api_core import exceptions as google_exceptions
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -360,3 +361,18 @@ def register_user(request):
         "form": form,
     }
     return render(request, "register.html", context)
+
+
+def login_user(request):
+    """Show and process the login form, starting a session on success."""
+    form = AuthenticationForm(request, data=request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        login(request, form.get_user())
+        return redirect("main:show_main")
+
+    context = {
+        "name": PROFILE_NAME,
+        "form": form,
+    }
+    return render(request, "login.html", context)
