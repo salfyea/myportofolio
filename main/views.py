@@ -103,6 +103,7 @@ def show_main(request):
         ),
         "experience_list": Experience.objects.order_by("-started_at"),
         "skill_list": Skill.objects.all(),
+        "last_login": request.COOKIES.get("last_login", "Belum pernah login"),
     }
     return render(request, "index.html", context)
 
