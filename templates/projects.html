@@ -51,9 +51,13 @@
                                 class="project-image">
                         {% endif %}
 
-                        <h2>
-                            {{ project.title }}
-                        </h2>
+                        <div class="project-card__title">
+                            <h2>
+                                {{ project.title }}
+                            </h2>
+
+                            {% include "components/project_star.html" with project=project %}
+                        </div>
 
                         <p class="project-category">
                             {{ project.category }}

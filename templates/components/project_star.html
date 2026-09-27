@@ -1,0 +1,37 @@
+{% if user.is_authenticated %}
+    <form
+        method="post"
+        action="{% url 'main:toggle_star' project.id %}"
+        class="star-form"
+    >
+        {% csrf_token %}
+
+        {% if user in project.starred_by.all %}
+            <button
+                type="submit"
+                class="star-button star-button--active"
+                aria-pressed="true"
+                aria-label="Hapus star dari {{ project.title }}"
+            >
+                ★ {{ project.starred_by.count }}
+            </button>
+        {% else %}
+            <button
+                type="submit"
+                class="star-button"
+                aria-pressed="false"
+                aria-label="Beri star ke {{ project.title }}"
+            >
+                ☆ {{ project.starred_by.count }}
+            </button>
+        {% endif %}
+    </form>
+{% else %}
+    <a
+        href="{% url 'main:login' %}"
+        class="star-button"
+        title="Login untuk memberi star"
+    >
+        ☆ {{ project.starred_by.count }}
+    </a>
+{% endif %}
