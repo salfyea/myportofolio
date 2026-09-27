@@ -368,6 +368,21 @@ def toggle_star(request, project_id):
     return redirect(f"{reverse('main:show_projects')}#project-{project.id}")
 
 
+@login_required(login_url="/login/")
+def toggle_skill_star(request, skill_id):
+    """Star or unstar a skill for the current user on POST."""
+    skill = get_object_or_404(Skill, pk=skill_id)
+
+    if request.method == "POST":
+        if skill.starred_by.filter(pk=request.user.pk).exists():
+            skill.starred_by.remove(request.user)
+        else:
+            skill.starred_by.add(request.user)
+
+    # Land back on the Skills section instead of the top of the page.
+    return redirect(f"{reverse('main:show_main')}#skills")
+
+
 def register_user(request):
     """Show and process the registration form for new visitor accounts."""
     form = UserCreationForm(request.POST or None)
