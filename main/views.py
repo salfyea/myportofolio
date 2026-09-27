@@ -17,6 +17,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -350,7 +351,7 @@ def delete_project(request, project_id):
     return redirect("main:show_projects")
 
 
-@login_required
+@login_required(login_url="/login/")
 def toggle_star(request, project_id):
     """Star or unstar a project for the current user on POST."""
     project = get_object_or_404(Project, pk=project_id)
@@ -361,7 +362,8 @@ def toggle_star(request, project_id):
         else:
             project.starred_by.add(request.user)
 
-    return redirect("main:show_projects")
+    # Land back on this project's card instead of the top of the page.
+    return redirect(f"{reverse('main:show_projects')}#project-{project.id}")
 
 
 def register_user(request):

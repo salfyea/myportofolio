@@ -42,7 +42,10 @@
             <div class="card-grid">
 
                 {% for project in project_list %}
-                    <article class="card project-card">
+                    <article
+                        id="project-{{ project.id }}"
+                        class="card project-card"
+                    >
 
                         {% if project.project_image_url %}
                             <img 

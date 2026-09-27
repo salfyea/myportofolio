@@ -673,6 +673,24 @@ a:focus-visible {
     gap: 0.75rem;
 }
 
+/* Keeps the card clear of the sticky header when jumped to via #project-<id> */
+.project-card {
+    scroll-margin-top: 7rem;
+}
+
+.project-card:target {
+    animation: card-highlight 1.6s ease;
+}
+
+@keyframes card-highlight {
+    0%,
+    40% {
+        box-shadow:
+            0 0 0 4px var(--accent-dark),
+            0 12px 30px rgba(214, 93, 140, 0.18);
+    }
+}
+
 .star-form {
     flex-shrink: 0;
 }
