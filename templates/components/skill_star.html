@@ -1,0 +1,30 @@
+{# is_duplicate: the marquee's second, aria-hidden copy, kept out of the tab order #}
+<form
+    method="post"
+    action="{% url 'main:toggle_skill_star' skill.id %}"
+    class="star-form"
+>
+    {% csrf_token %}
+
+    {% if user in skill.starred_by.all %}
+        <button
+            type="submit"
+            class="star-button star-button--active"
+            aria-pressed="true"
+            aria-label="Hapus star dari {{ skill.name }}"
+            {% if is_duplicate %}tabindex="-1"{% endif %}
+        >
+            ★ {{ skill.starred_by.count }}
+        </button>
+    {% else %}
+        <button
+            type="submit"
+            class="star-button"
+            aria-pressed="false"
+            aria-label="Beri star ke {{ skill.name }}"
+            {% if is_duplicate %}tabindex="-1"{% endif %}
+        >
+            ☆ {{ skill.starred_by.count }}
+        </button>
+    {% endif %}
+</form>
