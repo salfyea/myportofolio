@@ -71,6 +71,9 @@ class Skill(models.Model):
     icon_url = models.URLField()
     category = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_skills", blank=True
+    )
 
     def __str__(self):
         return self.name
