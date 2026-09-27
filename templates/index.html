@@ -146,10 +146,16 @@
         <div class="skills-marquee-wrap">
             <div class="skills-marquee-track">
                 {% for skill in skill_list %}
-                    <div class="skill-badge"><img src="{{ skill.icon_url }}" alt="{{ skill.name }}"><span>{{ skill.name }}</span></div>
+                    <div class="skill-badge">
+                        <img src="{{ skill.icon_url }}" alt="{{ skill.name }}"><span>{{ skill.name }}</span>
+                        {% include "components/skill_star.html" with skill=skill %}
+                    </div>
                 {% endfor %}
                 {% for skill in skill_list %}
-                    <div class="skill-badge" aria-hidden="true"><img src="{{ skill.icon_url }}" alt=""><span>{{ skill.name }}</span></div>
+                    <div class="skill-badge" aria-hidden="true">
+                        <img src="{{ skill.icon_url }}" alt=""><span>{{ skill.name }}</span>
+                        {% include "components/skill_star.html" with skill=skill is_duplicate=True %}
+                    </div>
                 {% endfor %}
             </div>
         </div>

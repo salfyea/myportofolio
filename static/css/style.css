@@ -725,6 +725,11 @@ a:focus-visible {
     color: var(--white);
 }
 
+.skill-badge .star-button {
+    padding: 0.2rem 0.65rem;
+    font-size: 0.8rem;
+}
+
 .star-button--active:hover {
     background: var(--accent-dark);
     border-color: var(--accent-dark);
@@ -1103,7 +1108,8 @@ a:focus-visible {
   gap: 32px;
   animation: skills-scroll 16s linear infinite;
 }
-.skills-marquee-wrap:hover .skills-marquee-track { animation-play-state: paused; }
+.skills-marquee-wrap:hover .skills-marquee-track,
+.skills-marquee-wrap:focus-within .skills-marquee-track { animation-play-state: paused; }
 .skill-badge { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 72px; }
 .skill-badge img { width: 36px; height: 36px; }
 .skill-badge span { font-size: 13px; color: #555; }
