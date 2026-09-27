@@ -12,6 +12,7 @@ from google.api_core import exceptions as google_exceptions
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
@@ -345,6 +346,20 @@ def delete_project(request, project_id):
         else:
             project.delete()
             messages.success(request, "Project berhasil dihapus!")
+
+    return redirect("main:show_projects")
+
+
+@login_required
+def toggle_star(request, project_id):
+    """Star or unstar a project for the current user on POST."""
+    project = get_object_or_404(Project, pk=project_id)
+
+    if request.method == "POST":
+        if project.starred_by.filter(pk=request.user.pk).exists():
+            project.starred_by.remove(request.user)
+        else:
+            project.starred_by.add(request.user)
 
     return redirect("main:show_projects")
 
