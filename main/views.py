@@ -12,10 +12,12 @@ from google.api_core import exceptions as google_exceptions
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -347,6 +349,21 @@ def delete_project(request, project_id):
             messages.success(request, "Project berhasil dihapus!")
 
     return redirect("main:show_projects")
+
+
+@login_required(login_url="/login/")
+def toggle_star(request, project_id):
+    """Star or unstar a project for the current user on POST."""
+    project = get_object_or_404(Project, pk=project_id)
+
+    if request.method == "POST":
+        if project.starred_by.filter(pk=request.user.pk).exists():
+            project.starred_by.remove(request.user)
+        else:
+            project.starred_by.add(request.user)
+
+    # Land back on this project's card instead of the top of the page.
+    return redirect(f"{reverse('main:show_projects')}#project-{project.id}")
 
 
 def register_user(request):
