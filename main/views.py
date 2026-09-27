@@ -137,7 +137,9 @@ def _get_projects(request):
 def get_projects_json(request):
     """Return projects as JSON, optionally filtered by the ``title`` query param."""
     projects, _ = _get_projects(request)
-    projects_json = serializers.serialize("json", projects)
+    projects_json = serializers.serialize(
+        "json", projects, use_natural_foreign_keys=True
+    )
 
     return HttpResponse(projects_json, content_type="application/json")
 
