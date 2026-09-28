@@ -125,39 +125,52 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 
-def _get_projects(request):
-    """Return (queryset, query) of projects filtered by the ``title`` GET param.
+def _get_title_query(request):
+    """Return the trimmed ``title`` GET param used to search projects."""
+    return request.GET.get("title", "").strip()
 
-    Shared by ``show_projects`` and ``get_projects_json`` so both views stay
-    in sync on how search filtering works without one calling the other.
+
+def get_projects_json(request):
+    """Return projects as JSON, optionally filtered by the ``title`` query param.
+
+    Built by hand instead of with ``serializers.serialize`` so each item can
+    carry per-request data such as whether the current user starred it.
     """
-    title_query = request.GET.get("title", "").strip()
-    projects = Project.objects.all()
+    title_query = _get_title_query(request)
+    projects = Project.objects.prefetch_related("starred_by")
 
     if title_query:
         projects = projects.filter(title__icontains=title_query)
 
-    return projects, title_query
+    data = []
+    for project in projects:
+        # .all() reuses the prefetched users, so no extra query per project.
+        starred_users = project.starred_by.all()
 
+        data.append({
+            "pk": str(project.pk),
+            "fields": {
+                "title": project.title,
+                "description": project.description,
+                "category": project.category,
+                "link": project.link,
+                "project_image_url": project.project_image_url,
+                "star_count": len(starred_users),
+                "is_starred": any(
+                    user.pk == request.user.pk for user in starred_users
+                ),
+                "starred_by_names": [user.username for user in starred_users],
+            },
+        })
 
-def get_projects_json(request):
-    """Return projects as JSON, optionally filtered by the ``title`` query param."""
-    projects, _ = _get_projects(request)
-    projects_json = serializers.serialize(
-        "json", projects, use_natural_foreign_keys=True
-    )
-
-    return HttpResponse(projects_json, content_type="application/json")
+    return JsonResponse(data, safe=False)
 
 
 def show_projects(request):
-    """Render the projects list page, with optional search by title."""
-    projects, title_query = _get_projects(request)
-
+    """Render the projects page shell; the cards are loaded via AJAX."""
     context = {
         "name": PROFILE_NAME,
-        "project_list": projects,
-        "title_query": title_query,
+        "title_query": _get_title_query(request),
         "is_editor": is_editor(request.user),
     }
 

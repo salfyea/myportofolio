@@ -401,6 +401,11 @@ a:focus-visible {
     outline-offset: 4px;
 }
 
+/* UTILITIES */
+.hide {
+    display: none !important;
+}
+
 /* EXPERIENCE PAGE */
 .experience-section {
     padding: 4rem 0;
