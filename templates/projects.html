@@ -73,6 +73,8 @@
         const sectionIds = ['loading', 'error', 'empty', 'grid'];
         const searchForm = document.getElementById('project-search-form');
         const searchInput = document.getElementById('search-input');
+        const SEARCH_DEBOUNCE_DELAY = 300;
+        let searchDebounceTimer = null;
         const grid = document.getElementById('grid');
         const emptyMessage = document.getElementById('empty-message');
 
@@ -283,9 +285,21 @@
             }
         }
 
+        function searchProjects() {
+            fetchProjects(searchInput.value.trim());
+        }
+
+        // Wait until the user stops typing before sending a request.
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(searchProjects, SEARCH_DEBOUNCE_DELAY);
+        });
+
         searchForm.addEventListener('submit', function (event) {
             event.preventDefault();
-            fetchProjects(searchInput.value.trim());
+            // Search right away and drop the pending debounced search.
+            clearTimeout(searchDebounceTimer);
+            searchProjects();
         });
 
         fetchProjects(searchInput.value.trim());
