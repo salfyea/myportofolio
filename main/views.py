@@ -209,7 +209,9 @@ def update_project(request, project_id):
 def get_skills_json(request):
     """Return skills as JSON."""
     skills = Skill.objects.all()
-    skills_json = serializers.serialize("json", skills)
+    skills_json = serializers.serialize(
+        "json", skills, use_natural_foreign_keys=True
+    )
 
     return HttpResponse(skills_json, content_type="application/json")
 
