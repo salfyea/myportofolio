@@ -1,23 +1,11 @@
 """Forms for the portfolio app."""
 
-from django.forms import CharField, Form, HiddenInput, ModelForm, TextInput, Textarea, URLInput
+from django.forms import ModelForm, TextInput, Textarea, URLInput
 
 from main.models import Project, Skill
 
 
-class SecretKeyFormMixin(Form):
-    """Adds the shared-secret password field, since there's no auth/session
-    system yet. The field is rendered hidden — the template shows a password
-    gate first and copies the typed value into this field via JS once
-    unlocked. The actual match against ``settings.PORTFOLIO_EDIT_KEY``
-    happens in the view before saving, the same way the delete views check
-    it.
-    """
-
-    secret_key = CharField(widget=HiddenInput())
-
-
-class ProjectForm(SecretKeyFormMixin, ModelForm):
+class ProjectForm(ModelForm):
     """Form used to create a new ``Project`` from the "Tambah Project" page."""
 
     field_order = [
@@ -26,7 +14,6 @@ class ProjectForm(SecretKeyFormMixin, ModelForm):
         "category",
         "link",
         "project_image_url",
-        "secret_key",
     ]
 
     class Meta:
@@ -79,10 +66,10 @@ class ProjectForm(SecretKeyFormMixin, ModelForm):
         }
 
 
-class SkillForm(SecretKeyFormMixin, ModelForm):
+class SkillForm(ModelForm):
     """Form used to create/edit a ``Skill``."""
 
-    field_order = ["name", "icon_url", "category", "secret_key"]
+    field_order = ["name", "icon_url", "category"]
 
     class Meta:
         model = Skill

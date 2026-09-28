@@ -520,10 +520,6 @@ a:focus-visible {
     flex-wrap: wrap;
 }
 
-.form-gate {
-    max-width: 360px;
-}
-
 /* BUTTONS */
 .button {
     display: inline-block; /* avoids overlap with preceding text */

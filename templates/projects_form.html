@@ -16,41 +16,20 @@
             id="project-form"
         >
             {% csrf_token %}
-            {{ form.secret_key }}
 
-            <div id="form-gate" class="form-gate">
-                <div class="form-group">
-                    <label for="gate-password">Kode Rahasia</label>
-                    <input
-                        type="password"
-                        id="gate-password"
-                        placeholder="Masukkan kode rahasia untuk mengedit"
-                        autocomplete="off"
-                    >
-                </div>
-
-                <button type="button" id="gate-submit" class="button">
-                    Lanjutkan
-                </button>
-
-                <p id="gate-error" class="form-error"></p>
-            </div>
-
-            <div id="form-fields" class="form-fields" hidden>
+            <div id="form-fields" class="form-fields">
                 {% for field in form %}
-                    {% if field.name != "secret_key" %}
-                        <div class="form-group">
-                            <label for="{{ field.id_for_label }}">
-                                {{ field.label }}
-                            </label>
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
 
-                            {{ field }}
+                        {{ field }}
 
-                            {% for error in field.errors %}
-                                <p class="form-error">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
+                        {% for error in field.errors %}
+                            <p class="form-error">{{ error }}</p>
+                        {% endfor %}
+                    </div>
                 {% endfor %}
 
                 <div class="form-actions">
@@ -70,66 +49,4 @@
     </div>
 </section>
 
-<script>
-    (function () {
-        function getCookie(name) {
-            const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-            return match ? decodeURIComponent(match[1]) : null;
-        }
-
-        const gate = document.getElementById('form-gate');
-        const fields = document.getElementById('form-fields');
-        const gateInput = document.getElementById('gate-password');
-        const gateSubmit = document.getElementById('gate-submit');
-        const gateError = document.getElementById('gate-error');
-        const secretInput = document.getElementById('id_secret_key');
-
-        function unlock() {
-            const value = gateInput.value;
-            if (!value) {
-                gateInput.focus();
-                return;
-            }
-
-            gateError.textContent = '';
-            gateSubmit.disabled = true;
-
-            fetch("{% url 'main:verify_secret_key' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify({ secret_key: value }),
-            })
-                .then(function (response) {
-                    return response.json();
-                })
-                .then(function (data) {
-                    gateSubmit.disabled = false;
-
-                    if (!data.valid) {
-                        gateError.textContent = 'Kode rahasia salah.';
-                        return;
-                    }
-
-                    secretInput.value = value;
-                    gate.hidden = true;
-                    fields.hidden = false;
-                })
-                .catch(function () {
-                    gateSubmit.disabled = false;
-                    gateError.textContent = 'Gagal memverifikasi kode, coba lagi.';
-                });
-        }
-
-        gateSubmit.addEventListener('click', unlock);
-        gateInput.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                unlock();
-            }
-        });
-    })();
-</script>
 {% endblock %}
