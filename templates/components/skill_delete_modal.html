@@ -33,19 +33,6 @@
         >
             {% csrf_token %}
 
-            <div class="form-group">
-                <label for="delete-skill-secret-{{ skill.id }}">
-                    Kode Rahasia
-                </label>
-                <input
-                    type="password"
-                    id="delete-skill-secret-{{ skill.id }}"
-                    name="secret_key"
-                    placeholder="Masukkan kode rahasia"
-                    required
-                >
-            </div>
-
             <div class="delete-modal__actions">
                 <button
                     type="button"
