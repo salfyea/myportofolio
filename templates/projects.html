@@ -20,11 +20,11 @@
         </div>
 
         <form
-            method="get"
-            action="{% url 'main:show_projects' %}"
+            id="project-search-form"
             class="project-search"
         >
             <input
+                id="search-input"
                 type="search"
                 name="title"
                 value="{{ title_query }}"
@@ -40,85 +40,255 @@
             </button>
         </form>
 
-        {% if project_list %}
-            <div class="card-grid">
+        <div id="loading">
+            <p class="empty-state">Memuat project...</p>
+        </div>
 
-                {% for project in project_list %}
-                    <article
-                        id="project-{{ project.id }}"
-                        class="card project-card"
-                    >
+        <div id="error" class="hide">
+            <p class="empty-state">Gagal memuat project. Silakan coba lagi nanti.</p>
+        </div>
 
-                        {% if project.project_image_url %}
-                            <img 
-                                src="{{ project.project_image_url }}" 
-                                alt="{{ project.title }}"
-                                class="project-image">
-                        {% endif %}
+        <div id="empty" class="hide">
+            <p id="empty-message" class="empty-state"></p>
+        </div>
 
-                        <div class="project-card__title">
-                            <h2>
-                                {{ project.title }}
-                            </h2>
-
-                            {% include "components/project_star.html" with project=project %}
-                        </div>
-
-                        <p class="project-category">
-                            {{ project.category }}
-                        </p>
-
-                        <p>
-                            {{ project.description }}
-                        </p>
-
-                        <div class="project-actions">
-
-                            {% if project.link %}
-                                <a
-                                    href="{{ project.link }}"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="button"
-                                >
-                                    View Project
-                                </a>
-                            {% endif %}
-
-                            {% if user.is_superuser or is_editor %}
-                                <a
-                                    href="{% url 'main:update_project' project.id %}"
-                                    class="button button-secondary"
-                                >
-                                    Edit
-                                </a>
-                            {% endif %}
-
-                            {% if user.is_superuser %}
-                                {% include "components/project_delete_modal.html" with project=project %}
-                            {% endif %}
-
-                        </div>
-
-                    </article>
-                {% endfor %}
-
-            </div>
-
-        {% else %}
-
-            {% if title_query %}
-                <p class="empty-state">
-                    Tidak ada project dengan nama tersebut.
-                </p>
-            {% else %}
-                <p class="empty-state">
-                    Belum ada project yang tersedia.
-                </p>
-            {% endif %}
-
-        {% endif %}
+        <div id="grid" class="card-grid hide"></div>
 
     </div>
 </section>
+
+<script>
+    (function () {
+        const PROJECT_ID_PLACEHOLDER = '00000000-0000-0000-0000-000000000000';
+
+        const projectsApiUrl = "{% url 'main:get_projects_json' %}";
+        const updateUrlTemplate = "{% url 'main:update_project' '00000000-0000-0000-0000-000000000000' %}";
+        const deleteUrlTemplate = "{% url 'main:delete_project' '00000000-0000-0000-0000-000000000000' %}";
+        const starUrlTemplate = "{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}";
+
+        const csrfToken = '{{ csrf_token }}';
+        const canEdit = {% if user.is_superuser or is_editor %}true{% else %}false{% endif %};
+        const canDelete = {% if user.is_superuser %}true{% else %}false{% endif %};
+
+        const sectionIds = ['loading', 'error', 'empty', 'grid'];
+        const searchForm = document.getElementById('project-search-form');
+        const searchInput = document.getElementById('search-input');
+        const grid = document.getElementById('grid');
+        const emptyMessage = document.getElementById('empty-message');
+
+        let currentController = null;
+
+        function buildUrl(template, projectId) {
+            return template.replace(PROJECT_ID_PLACEHOLDER, projectId);
+        }
+
+        function createElement(tagName, className, text) {
+            const element = document.createElement(tagName);
+
+            if (className) {
+                element.className = className;
+            }
+
+            if (text !== undefined) {
+                element.textContent = text;
+            }
+
+            return element;
+        }
+
+        function createCsrfInput() {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrfmiddlewaretoken';
+            input.value = csrfToken;
+            return input;
+        }
+
+        // Show exactly one of the loading / error / empty / grid containers.
+        function displayPageSection(sectionId) {
+            sectionIds.forEach(function (id) {
+                document.getElementById(id).classList.toggle('hide', id !== sectionId);
+            });
+        }
+
+        function buildStarForm(project) {
+            const fields = project.fields;
+
+            const form = createElement('form', 'star-form');
+            form.method = 'post';
+            form.action = buildUrl(starUrlTemplate, project.pk);
+            form.appendChild(createCsrfInput());
+
+            const button = createElement(
+                'button',
+                fields.is_starred ? 'star-button star-button--active' : 'star-button',
+                (fields.is_starred ? '★ ' : '☆ ') + fields.star_count
+            );
+            button.type = 'submit';
+            button.setAttribute('aria-pressed', fields.is_starred ? 'true' : 'false');
+            button.setAttribute(
+                'aria-label',
+                (fields.is_starred ? 'Hapus star dari ' : 'Beri star ke ') + fields.title
+            );
+
+            form.appendChild(button);
+            return form;
+        }
+
+        function buildDeleteControls(project) {
+            const modalId = 'delete-project-' + project.pk;
+            const fragment = document.createDocumentFragment();
+
+            const openButton = createElement('button', 'button button-danger', 'Hapus');
+            openButton.type = 'button';
+            openButton.setAttribute('popovertarget', modalId);
+            fragment.appendChild(openButton);
+
+            const modal = createElement('div', 'delete-modal');
+            modal.id = modalId;
+            modal.setAttribute('popover', 'auto');
+
+            const backdrop = createElement('button', 'delete-modal__backdrop');
+            backdrop.type = 'button';
+            backdrop.setAttribute('popovertarget', modalId);
+            backdrop.setAttribute('popovertargetaction', 'hide');
+            backdrop.setAttribute('aria-label', 'Tutup');
+            modal.appendChild(backdrop);
+
+            const content = createElement('div', 'delete-modal__content');
+            content.appendChild(createElement('h2', '', 'Hapus Project?'));
+
+            const question = createElement('p', '', 'Apakah kamu yakin ingin menghapus ');
+            question.appendChild(createElement('strong', '', project.fields.title));
+            question.appendChild(document.createTextNode('?'));
+            content.appendChild(question);
+
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = buildUrl(deleteUrlTemplate, project.pk);
+            form.appendChild(createCsrfInput());
+
+            const actions = createElement('div', 'delete-modal__actions');
+
+            const cancelButton = createElement('button', 'button button-secondary', 'Batal');
+            cancelButton.type = 'button';
+            cancelButton.setAttribute('popovertarget', modalId);
+            cancelButton.setAttribute('popovertargetaction', 'hide');
+            actions.appendChild(cancelButton);
+
+            const confirmButton = createElement('button', 'button button-danger', 'Ya, Hapus');
+            confirmButton.type = 'submit';
+            actions.appendChild(confirmButton);
+
+            form.appendChild(actions);
+            content.appendChild(form);
+            modal.appendChild(content);
+            fragment.appendChild(modal);
+
+            return fragment;
+        }
+
+        function buildProjectCardElement(project) {
+            const fields = project.fields;
+
+            const card = createElement('article', 'card project-card');
+            card.id = 'project-' + project.pk;
+
+            if (fields.project_image_url) {
+                const image = createElement('img', 'project-image');
+                image.src = fields.project_image_url;
+                image.alt = fields.title;
+                card.appendChild(image);
+            }
+
+            const titleRow = createElement('div', 'project-card__title');
+            titleRow.appendChild(createElement('h2', '', fields.title));
+            titleRow.appendChild(buildStarForm(project));
+            card.appendChild(titleRow);
+
+            card.appendChild(createElement('p', 'project-category', fields.category));
+            card.appendChild(createElement('p', '', fields.description));
+
+            const actions = createElement('div', 'project-actions');
+
+            if (fields.link) {
+                const viewLink = createElement('a', 'button', 'View Project');
+                viewLink.href = fields.link;
+                viewLink.target = '_blank';
+                viewLink.rel = 'noopener';
+                actions.appendChild(viewLink);
+            }
+
+            if (canEdit) {
+                const editLink = createElement('a', 'button button-secondary', 'Edit');
+                editLink.href = buildUrl(updateUrlTemplate, project.pk);
+                actions.appendChild(editLink);
+            }
+
+            if (canDelete) {
+                actions.appendChild(buildDeleteControls(project));
+            }
+
+            card.appendChild(actions);
+            return card;
+        }
+
+        async function fetchProjects(title) {
+            // Cancel the previous request so a slow, older response
+            // cannot overwrite the results of a newer search.
+            if (currentController) {
+                currentController.abort();
+            }
+
+            const controller = new AbortController();
+            currentController = controller;
+
+            displayPageSection('loading');
+
+            const url = new URL(projectsApiUrl, window.location.origin);
+            if (title) {
+                url.searchParams.set('title', title);
+            }
+
+            try {
+                const response = await fetch(url, { signal: controller.signal });
+
+                if (!response.ok) {
+                    throw new Error('Request failed with status ' + response.status);
+                }
+
+                const projects = await response.json();
+
+                if (projects.length === 0) {
+                    emptyMessage.textContent = title
+                        ? 'Tidak ada project dengan nama tersebut.'
+                        : 'Belum ada project yang tersedia.';
+                    grid.replaceChildren();
+                    displayPageSection('empty');
+                    return;
+                }
+
+                grid.replaceChildren(...projects.map(buildProjectCardElement));
+                displayPageSection('grid');
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
+                displayPageSection('error');
+            } finally {
+                if (currentController === controller) {
+                    currentController = null;
+                }
+            }
+        }
+
+        searchForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            fetchProjects(searchInput.value.trim());
+        });
+
+        fetchProjects(searchInput.value.trim());
+    })();
+</script>
 {% endblock %}
