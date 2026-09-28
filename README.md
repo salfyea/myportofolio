@@ -35,7 +35,7 @@ Website ini merupakan portofolio pribadi yang menampilkan profil, pengalaman, pr
 
 Proyek ini dikerjakan secara **bertahap sepanjang semester** dengan melanjutkan hasil dari tutorial dan tugas sebelumnya. Karena itu, README ini juga diperlakukan sebagai dokumentasi yang terus berkembang: setiap tugas baru akan menambahkan fitur, refleksi, catatan implementasi, serta pembaruan setup tanpa menghilangkan riwayat perkembangan sebelumnya.
 
-Pada tahap awal, portofolio masih bersifat statis. Seiring bertambahnya materi Django, project berkembang menjadi aplikasi yang menggunakan **Model-View-Template (MVT)**, database, form, CRUD, JSON API, dan fitur interaktif.
+Pada tahap awal, portofolio masih bersifat statis. Seiring bertambahnya materi Django, project berkembang menjadi aplikasi yang menggunakan **Model-View-Template (MVT)**, database, form, CRUD, JSON API, fitur interaktif, serta **sistem autentikasi dan otorisasi berbasis peran**.
 
 ### Arah Perkembangan Proyek
 
@@ -54,6 +54,10 @@ JSON Delivery
       ↓
 Interactive Frontend
       ↓
+Authentication, Session & Cookie
+      ↓
+Role-based Authorization
+      ↓
 Fitur tambahan & pengembangan berikutnya
 ```
 
@@ -65,9 +69,10 @@ Fitur tambahan & pengembangan berikutnya
 | **CSS3** | Warna, tipografi, Grid, Flexbox, media query, dan efek hover |
 | **JavaScript** | Interaksi frontend dan pengambilan data JSON |
 | **Python** | Bahasa pemrograman backend |
-| **Django** | Routing, view, model, ORM, form, template, dan logika aplikasi |
+| **Django** | Routing, view, model, ORM, form, template, session, autentikasi, dan otorisasi |
+| **Django Auth & Groups** | Sistem akun bawaan Django serta pembagian peran pengguna |
 | **Git** | Mencatat perubahan kode dan membantu pengembangan bertahap |
-| **GitHub** | Menyimpan repositori dan dokumentasi proyek |
+| **GitHub** | Menyimpan repositori, Pull Request, dan dokumentasi proyek |
 | **Google Gemini API** | Mendukung fitur AI Chat Widget melalui backend |
 
 ---
@@ -84,6 +89,8 @@ Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
 | **Tugas 2** | Pengembangan Featured Projects berbasis database menggunakan model `Project`, migration, fixture, queryset, halaman Projects terpisah, navigasi, template dinamis dengan empty state, serta pengujian fitur. |
 | **Tutorial 3** | Pembuatan skeleton `base.html` sebagai root template, penerapan `ModelForm` untuk `Project`, serta implementasi create, update, delete, dan JSON delivery untuk `Project`. |
 | **Tugas 3** | Refactor template agar extend dari `base.html`; pembuatan model `Skill` menggantikan data Skills yang sebelumnya hardcoded; `ModelForm`, create, update, delete, JSON delivery, dan penampilan data hasil deserialisasi JSON secara langsung pada halaman kelola Skills. |
+| **Tutorial 4** | Implementasi autentikasi bawaan Django (register, login, logout), penanda status login pada navbar, cookie `last_login` beserta penghapusannya saat logout, pembatasan create dan delete `Project` untuk pemilik portofolio, fitur star pada `Project` menggunakan `ManyToManyField`, serta pengamanan endpoint JSON dengan natural key. |
+| **Tugas 4** | Penerapan pola autentikasi dan otorisasi pada bagian `Skill`: penambahan peran **Editor** melalui Django Group, pembatasan hak akses sisi server untuk empat peran, penyembunyian kontrol aksi pada template sesuai peran, fitur star pada `Skill`, serta penggantian proteksi kode rahasia dengan sistem otorisasi Django. |
 | **Tugas berikutnya** | Akan ditambahkan pada bagian ini beserta perubahan fitur, konsep yang dipelajari, dan catatan implementasinya. |
 
 ### Timeline Implementasi
@@ -96,9 +103,11 @@ flowchart LR
     D[Tugas 2<br/>Project Database]
     E[Tutorial 3<br/>ModelForm + CRUD + JSON]
     F[Tugas 3<br/>Skill + CRUD + Live JSON]
-    G[Tugas Berikutnya<br/>Pengembangan lanjutan]
+    G[Tutorial 4<br/>Auth + Session + Cookie]
+    H[Tugas 4<br/>Role-based Authorization]
+    I[Tugas Berikutnya<br/>Pengembangan lanjutan]
 
-    A --> B --> C --> D --> E --> F --> G
+    A --> B --> C --> D --> E --> F --> G --> H --> I
 ```
 
 ---
@@ -112,9 +121,11 @@ Struktur berkas akan berkembang seiring bertambahnya fitur, tetapi tanggung jawa
 | `manage.py` | Menjalankan perintah pengelolaan proyek Django |
 | `portofolio/settings.py` | Konfigurasi proyek, template, static files, dan pengaturan lainnya |
 | `portofolio/urls.py` | Pemetaan URL utama proyek |
-| `main/models.py` | Definisi model dan struktur data |
-| `main/views.py` | Logika request dan response |
+| `main/urls.py` | Pemetaan URL aplikasi, termasuk rute autentikasi dan star |
+| `main/models.py` | Definisi model dan struktur data, termasuk relasi star ke `User` |
+| `main/views.py` | Logika request dan response, termasuk pemeriksaan hak akses |
 | `main/forms.py` | Definisi `ModelForm` |
+| `main/migrations/` | Riwayat perubahan struktur database, termasuk data migration grup `Editor` |
 | `main/tests.py` | Pengujian fitur |
 | `templates/` | HTML template |
 | `static/` | CSS, gambar, dan aset statis |
@@ -189,6 +200,48 @@ JavaScript
 DOM
 ```
 
+### Session dan Pengenalan Pengguna
+
+HTTP bersifat *stateless*, sehingga server tidak otomatis mengingat siapa yang mengirim request sebelumnya. Django menjembatani hal ini dengan menyimpan data sesi di sisi server dan mengirim token `sessionid` ke browser melalui cookie.
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant D as Django
+    participant DB as django_session
+
+    B->>D: POST /login/ (username + password)
+    D->>D: Verifikasi kredensial
+    D->>DB: Simpan data sesi
+    D-->>B: Set-Cookie sessionid + last_login
+    B->>D: Request berikutnya (cookie otomatis disertakan)
+    D->>DB: Cocokkan sessionid
+    D-->>B: Kenali request.user
+```
+
+Cookie hanya menyimpan token acak, bukan data sensitif. Data sesi yang sebenarnya tetap berada di sisi server.
+
+### Pembagian Hak Akses
+
+```mermaid
+flowchart TD
+    R[Request aksi tulis]
+    L{Sudah login?}
+    S{Superuser?}
+    E{Anggota grup Editor?}
+    U{Jenis aksi?}
+
+    R --> L
+    L -->|Tidak| RED[Redirect ke /login/]
+    L -->|Ya| S
+    S -->|Ya| OK[Aksi diizinkan]
+    S -->|Tidak| U
+    U -->|Update| E
+    U -->|Create / Delete| F[403 Forbidden]
+    E -->|Ya| OK
+    E -->|Tidak| F
+```
+
 ---
 
 # Menjalankan Proyek
@@ -243,9 +296,8 @@ Konfigurasi lokal mengikuti kebutuhan project dan `settings.py`.
 Contoh nilai sensitif yang **tidak boleh ditulis langsung ke source code**:
 
 ```text
-DJANGO_SECRET_KEY=...
+SECRET_KEY=...
 GEMINI_API_KEY=...
-PORTFOLIO_EDIT_PASSWORD=...
 ```
 
 Gunakan environment variable lokal atau mekanisme secret yang disediakan platform deployment.
@@ -260,13 +312,39 @@ python manage.py check
 
 ## 7. Terapkan Migration
 
-Jika project menggunakan database yang membutuhkan migration:
-
 ```bash
 python manage.py migrate
 ```
 
-## 8. Jalankan Development Server
+Perintah ini sekaligus membuat grup **Editor** melalui *data migration*, sehingga peran tersebut tersedia secara otomatis pada setiap salinan project tanpa perlu dibuat manual lebih dulu.
+
+## 8. Siapkan Akun untuk Menguji Peran
+
+Buat akun pemilik portofolio:
+
+```bash
+python manage.py createsuperuser
+```
+
+Untuk menguji seluruh peran, daftarkan dua akun tambahan melalui halaman `/register/`:
+
+- satu akun dibiarkan sebagai **pengguna biasa**;
+- satu akun dijadikan **Editor** dengan cara masuk ke `/admin/` sebagai superuser, membuka **Users**, memilih akun tersebut, lalu memindahkan grup **Editor** ke kolom *Chosen groups* dan menyimpannya.
+
+Keanggotaan grup tersimpan di database, sedangkan `db.sqlite3` tidak ikut di-commit. Karena itu grup `Editor` dibuat lewat migration, tetapi pengisian anggotanya tetap dilakukan melalui Django Admin.
+
+### Pembagian Hak Akses
+
+| Peran | Baca | Star | Ubah | Tambah / Hapus |
+| --- | --- | --- | --- | --- |
+| Pengunjung (belum login) | Ya | Tidak | Tidak | Tidak |
+| Pengguna terdaftar | Ya | Ya | Tidak | Tidak |
+| Editor | Ya | Ya | Ya | Tidak |
+| Pemilik portofolio (superuser) | Ya | Ya | Ya | Ya |
+
+Pengunjung yang belum login diarahkan ke halaman login, sedangkan pengguna yang sudah login tetapi tidak berhak menerima respons **403 Forbidden**.
+
+## 9. Jalankan Development Server
 
 ```bash
 python manage.py runserver
@@ -301,6 +379,8 @@ python manage.py test
         ↓
 python manage.py runserver
 ```
+
+---
 
 # Refleksi Mingguan
 
@@ -542,59 +622,77 @@ python manage.py runserver
    DOM
    ```
 
----
+### Tugas 4
 
-## Fitur Tambahan
+> Pada Tugas 4, pertanyaan reflektif ditiadakan sesuai ketentuan tugas. Bagian ini saya isi dengan catatan implementasi agar riwayat pengembangan mingguan tetap terdokumentasi dan saya dapat mengingat apa yang saya pelajari/terapkan
 
-Selain requirement utama, saya menambahkan beberapa fitur tambahan sebagai bagian dari eksplorasi pengembangan project.
+1. **Perbedaan autentikasi dan otorisasi dalam implementasi ini**
+   
+   Autentikasi menjawab pertanyaan *siapa pengguna ini*, sedangkan otorisasi menjawab *apa yang boleh dilakukan pengguna tersebut*. Keduanya diterapkan sebagai dua lapis pemeriksaan yang terpisah di dalam view.
 
-### AI Chat Widget
+   Lapis pertama adalah `@login_required(login_url="/login/")`. Dekorator ini memeriksa apakah request berasal dari pengguna yang sudah login. Jika belum, Django langsung mengalihkan pengguna ke halaman login tanpa pernah menjalankan isi fungsi view.
 
-Widget chat dapat diakses dari halaman portofolio dan digunakan untuk bertanya mengenai pengalaman, skill, dan project yang ditampilkan.
+   Lapis kedua adalah pemeriksaan peran di baris pertama fungsi. Untuk aksi create dan delete, pemeriksaannya adalah `request.user.is_superuser`. Untuk aksi update, pemeriksaannya diperluas sehingga superuser maupun anggota grup `Editor` sama-sama diizinkan. Ketika pemeriksaan gagal, view memanggil `raise PermissionDenied` sehingga Django membalas dengan status **403 Forbidden**.
 
-Request tidak langsung dikirim dari browser ke Gemini API. Request terlebih dahulu masuk ke endpoint backend Django:
+   Kedua bentuk kegagalan tersebut sengaja dibedakan. Pengunjung yang belum login masih mempunyai langkah lanjutan yang jelas, yaitu login, sehingga diarahkan ke halaman login. Pengguna yang sudah login tetapi tidak berhak tidak mempunyai langkah lanjutan apa pun, sehingga permintaannya ditolak di tempat.
 
-```text
-Browser
-   ↓
-Chat Widget
-   ↓
-/api/chat/
-   ↓
-Gemini API
-   ↓
-Django
-   ↓
-Chat Widget
-```
+2. **Mengapa peran Editor menggunakan Django Group, bukan field boolean pada model**
 
-API key disimpan melalui environment variable dan tidak ditulis langsung pada kode frontend :D
+   Django hanya menyediakan tiga atribut peran bawaan pada model `User`, yaitu `is_active`, `is_staff`, dan `is_superuser`. Tidak ada atribut `is_editor`, sehingga peran baru perlu dibentuk dengan mekanisme lain.
 
-### Proteksi Data Sederhana
+   Saya memilih **Django Group** karena peran bersifat data, bukan struktur. Menambahkan field boleh baru pada model akan memaksa perubahan skema database setiap kali ada peran tambahan, sedangkan grup cukup ditambahkan sebagai baris data. Keanggotaan pengguna juga dapat diubah melalui Django Admin tanpa menyentuh kode.
 
-Untuk operasi create, update, dan delete pada Skill serta Project, project menggunakan password validation sederhana.
+   Pemeriksaannya dilakukan melalui satu fungsi bantu agar tidak diulang-ulang di banyak view:
 
-Alurnya:
+   ```python
+   def is_editor(user):
+       return user.groups.filter(name="Editor").exists()
+   ```
 
-```mermaid
-flowchart LR
-    A[User]
-    B[Create / Update / Delete]
-    C[Password]
-    D{Cocok?}
-    E[Proses aksi]
-    F[Aksi ditolak]
+   Agar peran ini tidak bergantung pada database lokal saya, grup `Editor` dibuat melalui **data migration**. Dengan demikian, siapa pun yang menjalankan `python manage.py migrate` akan langsung memiliki grup tersebut, karena `db.sqlite3` sendiri tidak ikut di-commit ke repositori.
 
-    A --> B --> C --> D
-    D -->|Ya| E
-    D -->|Tidak| F
-```
+3. **Mengapa proteksi kode rahasia dari Tugas 3 diganti**
 
-Mekanisme ini **bukan sistem authentication penuh** karena belum menggunakan account, session, atau permission system. Implementasi ini digunakan sebagai lapisan proteksi sederhana sesuai ruang lingkup materi yang sudah dipelajari
+   Pada Tugas 3, aksi create, update, dan delete dilindungi oleh sebuah kode rahasia yang disimpan pada environment variable. Mekanisme itu berfungsi sebagai lapisan proteksi sementara ketika materi autentikasi belum dipelajari, tetapi tidak mengenali identitas pengguna sama sekali.
+
+   Setelah peran diperkenalkan, kedua mekanisme tersebut tidak dapat berjalan berdampingan. Seorang Editor berhak mengubah data menurut aturan tugas, tetapi akan tetap tertahan oleh kode rahasia yang tidak ia miliki. Dua sistem proteksi yang saling menimpa juga membuat logika view sulit dibaca dan sulit diuji.
+
+   Karena itu seluruh pemeriksaan kode rahasia saya hapus dari view dan digantikan sepenuhnya oleh otorisasi Django. Endpoint pendukung `verify_secret_key` beserta konfigurasinya ikut dibersihkan agar tidak meninggalkan kode mati di dalam project.
+
+4. **Cara relasi star disimpan dan diamankan pada endpoint JSON**
+
+   Hubungan star dicatat dengan `ManyToManyField` ke model `User`, karena satu skill dapat di-star banyak pengguna dan satu pengguna dapat mem-star banyak skill. Django membuat tabel penghubungnya sendiri, sehingga tidak diperlukan model baru:
+
+   ```python
+   starred_by = models.ManyToManyField(
+       User, related_name="starred_skills", blank=True
+   )
+   ```
+
+   Penambahan field tersebut ternyata ikut mengubah isi endpoint JSON yang dapat dibuka siapa pun. Secara bawaan, serializer menampilkan id internal database pengguna. Karena itu serializer dipanggil dengan `use_natural_foreign_keys=True` agar relasi ditampilkan sebagai username yang memang bersifat publik, bukan id internal.
+
+   Saat menguji hal ini saya juga menemukan bahwa akun uji yang saya daftarkan memakai alamat email sebagai username, sehingga email tersebut ikut tampil pada endpoint publik. Akun tersebut saya ganti dengan username biasa agar tidak ada data kontak yang terekspos.
+
+5. **Pengujian yang dilakukan**
+
+   Pemeriksaan tidak cukup dilakukan dengan melihat tombol saja, karena `{% if %}` pada template hanya mengatur apa yang terlihat dan bukan apa yang boleh dijalankan. Karena itu setiap peran diuji dengan mengetik URL aksi secara langsung pada address bar:
+
+   | Skenario | Hasil yang diharapkan |
+   | --- | --- |
+   | Belum login membuka `/skills/add/` | Diarahkan ke `/login/` |
+   | Pengguna biasa membuka `/skills/<id>/edit/` | 403 Forbidden |
+   | Pengguna biasa menekan tombol star | Berhasil, jumlah star berubah |
+   | Editor membuka `/skills/<id>/edit/` lalu menyimpan | Form terbuka dan perubahan tersimpan |
+   | Editor membuka `/skills/add/` | 403 Forbidden |
+   | Superuser membuka seluruh aksi | Semua diizinkan |
+
+   Skenario yang sama diulang untuk halaman Projects. Cookie `last_login` dan `sessionid` juga diperiksa melalui tab **Application** pada Developer Tools untuk memastikan keduanya terbit saat login dan terhapus saat logout.
 
 ---
 
 # Penggunaan AI
+
+> Bagian ini sengaja dipisahkan dari refleksi teknis di atas agar peran AI dalam proses pengerjaan dapat ditelusuri secara terbuka, termasuk hal-hal yang tidak berjalan sesuai harapan.
 
 ## AI Disclosure
 
@@ -606,8 +704,28 @@ AI tidak digunakan sebagai pengganti proses implementasi dan verifikasi. Setiap 
 
 | Tools | Peran dalam proses |
 | --- | --- |
-| **ChatGPT** | Membantu memahami HTML/CSS, debugging frontend, responsive layout, dan penyusunan dokumentasi/refleksi |
-| **Claude** | Membantu memahami konsep Task 3 seperti `ModelForm`, serializer Django, JSON, CSRF, environment variable, membuat diagram dalam README.md, serta debugging backend/deployment |
+| **ChatGPT** | Membantu memahami HTML/CSS, debugging frontend, responsive layout, dan penyusunan dokumentasi/refleksi pada tugas-tugas awal |
+| **Claude** | Membantu memahami konsep `ModelForm`, serializer Django, JSON, CSRF, environment variable, membuat diagram pada README, serta debugging backend/deployment |
+| **Claude Code** | Digunakan pada Tutorial 4 dan Tugas 4 sebagai asisten implementasi di dalam VS Code untuk menulis perubahan kode langsung pada repository, dengan pembagian pekerjaan per branch |
+
+### Pembagian Peran pada Tugas 
+
+Pada minggu ini saya memisahkan dua jenis penggunaan AI secara sadar:
+
+```text
+Claude (chat)                     Claude Code (VS Code)
+      │                                    │
+Memahami konsep                   Menulis perubahan kode
+Menyusun rencana branch           Menjalankan migration
+Menyusun prompt kerja             Membuat commit per fitur
+      │                                    │
+      └──────────────┬─────────────────────┘
+                     ↓
+        Verifikasi manual oleh saya
+        (browser, DevTools, git log)
+```
+
+Pemisahan ini saya lakukan supaya perencanaan tidak tercampur dengan eksekusi. Rencana kerja dan pemahaman konsep saya susun lebih dulu, baru instruksinya dijalankan pada repository
 
 ---
 
@@ -618,7 +736,7 @@ Saya tidak hanya menggunakan satu prompt besar untuk seluruh pengerjaan. Saya me
 ```text
 1. Berikan konteks project
         ↓
-2. Jelaskan tujuan / requirement tugas
+2. Jelaskan tujuan / requirement tugas serta minta dijelaskan bagian yang rumit
         ↓
 3. Tunjukkan bagian kode atau error yang relevan
         ↓
@@ -628,11 +746,10 @@ Saya tidak hanya menggunakan satu prompt besar untuk seluruh pengerjaan. Saya me
         ↓
 6. Implementasikan dan uji secara manual
         ↓
-7. Kembali ke AI bila hasil belum sesuai
+7. Kembali ke AI dan minta dijelaskan alasan kenapa belum sesuai bila hasil belum sesuai
         ↓
 8. Rapikan solusi final + dokumentasikan pemahamannya
 ```
-
 
 # Evaluasi Kritis terhadap AI
 
@@ -661,6 +778,7 @@ Jawaban AI tidak membuktikan bahwa:
 - static files termuat;
 - layout mobile tidak bertumpuk;
 - environment variable berhasil dibaca;
+- pembatasan hak akses benar-benar menolak pengguna yang tidak berhak;
 - deployment berjalan sesuai harapan.
 
 Semua hal tersebut tetap perlu diuji secara langsung dan debugging mandiri agar terlatih
@@ -668,6 +786,30 @@ Semua hal tersebut tetap perlu diuji secara langsung dan debugging mandiri agar 
 ### 4. AI dapat menghasilkan lebih dari satu solusi
 
 Beberapa masalah memiliki banyak cara penyelesaian. Saya tidak selalu mengambil solusi pertama yang diberikan. Saya mencoba memahami trade-off-nya, menyesuaikan dengan materi kuliah, lalu memilih pendekatan yang paling sesuai dengan struktur project.
+
+### 5. AI dapat mengerjakan lebih dari yang diminta
+
+Pada branch fitur star, AI menambahkan penanganan parameter `next` pada view login yang sama sekali tidak saya minta. Fitur tersebut memang disebut sebagai latihan opsional pada tutorial, tetapi kodenya melibatkan konsep *open redirect* yang belum saya pelajari, dan ruang lingkupnya tidak berkaitan dengan branch yang sedang dikerjakan.
+
+Saya membatalkan perubahan tersebut, karena menyimpan kode yang belum saya pahami di dalam submission bukan keputusan yang bisa saya pertanggungjawabkan jika ditanya.
+
+### 6. AI dapat memilih pendekatan yang belum diajarkan
+
+Masih pada branch yang sama, tombol star sempat diubah agar bekerja tanpa memuat ulang halaman menggunakan `fetch`, sehingga view `toggle_star` ikut diubah supaya mengembalikan JSON. Padahal tutorial secara eksplisit menyatakan bahwa Fetch API baru akan dipelajari pada tutorial berikutnya, dan seluruh form pada modul ini masih berupa form HTML standar.
+
+Saya mengembalikan implementasinya ke form HTML biasa dengan `{% csrf_token %}`, agar sesuai dengan materi dan agar saya tidak kehilangan kesempatan mempelajari konversinya sendiri nanti.
+
+### 7. AI dapat keliru melaporkan status pekerjaan
+
+Ketika saya menanyakan apakah suatu tahap sudah dikerjakan, saya pernah menerima jawaban bahwa pekerjaan tersebut sudah selesai, padahal belum. Saya menemukannya karena memeriksa sendiri melalui `git diff` dan pencarian pada file, bukan karena diberi tahu.
+
+Sejak itu saya membiasakan memverifikasi status pekerjaan melalui perintah Git, bukan melalui ringkasan yang diberikan AI.
+
+### 8. Kesalahan alur kerja tetap menjadi tanggung jawab saya
+
+Satu branch berisi pembatasan hak akses `Project` sempat hampir tidak ikut ter-*merge* ke `main` karena saya keburu melanjutkan ke branch berikutnya. Kesalahan ini bukan berasal dari AI, melainkan dari alur kerja saya sendiri.
+
+Masalahnya baru ketahuan ketika saya membaca ulang `main/views.py` dan menyadari bahwa dekorator `@login_required` tidak ada di sana. Setelah itu saya membiasakan memeriksa `git log --oneline --graph` setiap selesai satu branch, sebelum berpindah ke pekerjaan berikutnya.
 
 ---
 
@@ -683,6 +825,11 @@ AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan
 | Serialization JSON | Menjelaskan alur model → serializer → JSON | Menguji endpoint dan response frontend |
 | Duplicate key pada context | Membantu menemukan sumber masalah | Memeriksa context aktual dan memperbaiki struktur dictionary |
 | Environment variable | Menjelaskan pola konfigurasi secret | Menyesuaikan dengan konfigurasi lokal/deployment PWS |
+| Fitur `next` yang tidak diminta | Menulis kodenya tanpa diminta | Membatalkan commit tersebut sebelum di-*push* |
+| Tombol star memakai `fetch` | Mengubah implementasi menjadi asinkronus | Mengembalikannya ke form HTML standar sesuai materi tutorial |
+| Status pekerjaan yang salah dilaporkan | Menyatakan tahap sudah selesai | Memverifikasi ulang melalui `git diff` dan memintanya dikerjakan |
+| Branch otorisasi belum ter-*merge* | — | Ditemukan sendiri saat membaca `views.py`, lalu di-*merge* dan diperiksa ulang |
+| Email tampil pada endpoint publik | — | Mengganti akun uji dengan username biasa lalu memeriksa ulang `/api/skills/` |
 
 ---
 
@@ -716,7 +863,7 @@ dibandingkan:
         Memahami hasil akhir
 ```
 
-Karena itu, AI saya gunakan sebagai **learning companion**. Keberhasilan suatu solusi tetap saya ukur dari implementasi dan pengujian pada project yang sebenarnya^^
+AI saya gunakan sebagai **learning companion**. Keberhasilan suatu solusi tetap saya ukur dari implementasi dan pengujian pada project yang sebenarnya^^
 
 ---
 
@@ -724,14 +871,18 @@ Karena itu, AI saya gunakan sebagai **learning companion**. Keberhasilan suatu s
 
 Project ini merupakan project pembelajaran dan belum dimaksudkan sebagai aplikasi production
 
-Beberapa prinsip yang sudah diterapkan:
+Beberapa prinsip yang sudah saya terapkan:
 
 - Form perubahan data menggunakan CSRF protection.
-- Secret/API key disimpan melalui environment variable.
-- Password untuk proteksi manual tidak ditulis langsung pada source code.
-- Mekanisme password manual dijelaskan secara terbuka sebagai **proteksi sederhana**, bukan authentication system.
+- Secret/API key disimpan melalui environment variable dan tidak ditulis pada source code.
+- Password pengguna tidak pernah disimpan sebagai teks biasa, melainkan di-*hash* oleh sistem autentikasi bawaan Django.
+- Cookie hanya menyimpan token sesi dan waktu login terakhir, bukan data kredensial.
+- Pembatasan hak akses dilakukan di **sisi server**, bukan hanya dengan menyembunyikan tombol pada template.
+- Endpoint JSON publik tidak menampilkan id internal database maupun data kontak pengguna.
 
-Untuk aplikasi production, mekanisme authentication dan authorization yang lebih lengkap tetap diperlukan.
+Mekanisme proteksi berbasis kode rahasia yang digunakan pada Tugas 3 sudah dihapus sepenuhnya dan digantikan oleh sistem autentikasi serta otorisasi Django.
+
+Untuk aplikasi production, konfigurasi seperti `DEBUG = False`, penggunaan HTTPS, serta pengelolaan sesi dan cookie yang lebih ketat tetap diperlukan.
 
 ---
 
@@ -741,4 +892,8 @@ Untuk aplikasi production, mekanisme authentication dan authorization yang lebih
 - [Django — Model Forms](https://docs.djangoproject.com/en/5.2/topics/forms/modelforms/)
 - [Django — Serialization](https://docs.djangoproject.com/en/5.2/topics/serialization/)
 - [Django — CSRF Protection](https://docs.djangoproject.com/en/5.2/ref/csrf/)
+- [Django — Using the Django authentication system](https://docs.djangoproject.com/en/5.2/topics/auth/default/)
+- [Django — How to use sessions](https://docs.djangoproject.com/en/5.2/topics/http/sessions/)
+- [Django — Data Migrations](https://docs.djangoproject.com/en/5.2/topics/migrations/#data-migrations)
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Shields.io](https://shields.io/badges/static-badge)
