@@ -781,6 +781,59 @@ a:focus-visible {
     margin-top: 1.5rem;
 }
 
+/* TOAST NOTIFICATION */
+.toast {
+    position: fixed;
+    inset: auto 24px 96px auto;
+    width: min(calc(100% - 48px), 360px);
+    margin: 0;
+    padding: 1rem 1.25rem;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-left: 6px solid var(--accent);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 32px rgba(74, 59, 71, 0.15);
+}
+
+.toast:popover-open {
+    animation: toast-in var(--transition);
+}
+
+.toast__title {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.toast__message {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.toast-success {
+    border-left-color: #1F7A45;
+}
+
+.toast-error {
+    border-left-color: #B42318;
+}
+
+.toast-normal {
+    border-left-color: var(--accent);
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* === AI Chat Widget === */
 .ai-chat-widget {
     position: fixed;
