@@ -10,12 +10,13 @@
             <h1 class="section-title">Projects</h1>
 
             {% if user.is_superuser %}
-                <a
-                    href="{% url 'main:create_project' %}"
+                <button
+                    type="button"
                     class="button"
+                    popovertarget="add-project-modal"
                 >
                     + Tambah Project
-                </a>
+                </button>
             {% endif %}
         </div>
 
@@ -57,6 +58,10 @@
     </div>
 </section>
 
+{% if user.is_superuser %}
+    {% include "components/project_form_modal.html" %}
+{% endif %}
+
 <script>
     (function () {
         const PROJECT_ID_PLACEHOLDER = '00000000-0000-0000-0000-000000000000';
@@ -77,6 +82,14 @@
         const emptyMessage = document.getElementById('empty-message');
 
         let currentController = null;
+
+        function closeProjectModal() {
+            const modal = document.getElementById('add-project-modal');
+
+            if (modal) {
+                modal.hidePopover();
+            }
+        }
 
         function buildUrl(template, projectId) {
             return template.replace(PROJECT_ID_PLACEHOLDER, projectId);
