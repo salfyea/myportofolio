@@ -198,6 +198,26 @@ def create_project(request):
     return render(request, "projects_form.html", context)
 
 
+@require_POST
+def create_project_ajax(request):
+    """Create a project from the modal form and answer with JSON.
+
+    Deliberately not ``@login_required``: that decorator answers anonymous
+    users with a 302 redirect to the login page, which fetch() follows and
+    turns into an HTML page. An AJAX client needs a machine-readable 403.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Tidak punya izin."}, status=403)
+
+    form = ProjectForm(request.POST)
+
+    if not form.is_valid():
+        return JsonResponse(form.errors.get_json_data(), status=400)
+
+    form.save()
+    return JsonResponse({"message": "Project baru berhasil ditambahkan!"}, status=201)
+
+
 @login_required(login_url="/login/")
 def update_project(request, project_id):
     """Show and process the "edit project" form for an existing project."""
