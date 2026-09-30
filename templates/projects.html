@@ -71,6 +71,8 @@
         const deleteUrlTemplate = "{% url 'main:delete_project' '00000000-0000-0000-0000-000000000000' %}";
         const starUrlTemplate = "{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}";
 
+        const CREATE_PROJECT_ENDPOINT = "{% url 'main:create_project_ajax' %}";
+
         const csrfToken = '{{ csrf_token }}';
         const canEdit = {% if user.is_superuser or is_editor %}true{% else %}false{% endif %};
         const canDelete = {% if user.is_superuser %}true{% else %}false{% endif %};
@@ -80,6 +82,7 @@
         const searchInput = document.getElementById('search-input');
         const grid = document.getElementById('grid');
         const emptyMessage = document.getElementById('empty-message');
+        const projectForm = document.getElementById('project-form');
 
         let currentController = null;
 
@@ -294,6 +297,55 @@
                     currentController = null;
                 }
             }
+        }
+
+        function getCookie(name) {
+            const prefix = name + '=';
+            const match = document.cookie
+                .split(';')
+                .map(function (part) { return part.trim(); })
+                .find(function (part) { return part.startsWith(prefix); });
+
+            return match ? decodeURIComponent(match.slice(prefix.length)) : null;
+        }
+
+        async function addProject(event) {
+            event.preventDefault();
+
+            const submitButton = projectForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch(CREATE_PROJECT_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: new FormData(projectForm),
+                });
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    projectForm.reset();
+                    closeProjectModal();
+                    showToast('Berhasil', 'Proyek baru berhasil ditambahkan!', 'success');
+                    fetchProjects(searchInput.value.trim());
+                    return;
+                }
+
+                const messages = result.errors
+                    ? Object.values(result.errors).flat().map(error => error.message)
+                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+
+                showToast('Gagal', messages.join(' '), 'error');
+            } catch (error) {
+                console.error(error);
+                showToast('Gagal', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+            } finally {
+                submitButton.disabled = false;
+            }
+        }
+
+        if (projectForm) {
+            projectForm.addEventListener('submit', addProject);
         }
 
         searchForm.addEventListener('submit', function (event) {
