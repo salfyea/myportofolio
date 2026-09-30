@@ -207,15 +207,21 @@ def create_project_ajax(request):
     turns into an HTML page. An AJAX client needs a machine-readable 403.
     """
     if not request.user.is_superuser:
-        return JsonResponse({"error": "Tidak punya izin."}, status=403)
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menambahkan proyek."},
+            status=403,
+        )
 
     form = ProjectForm(request.POST)
 
     if not form.is_valid():
-        return JsonResponse(form.errors.get_json_data(), status=400)
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
-    form.save()
-    return JsonResponse({"message": "Project baru berhasil ditambahkan!"}, status=201)
+    project = form.save()
+    return JsonResponse(
+        {"message": "Proyek berhasil ditambahkan.", "pk": str(project.id)},
+        status=201,
+    )
 
 
 @login_required(login_url="/login/")

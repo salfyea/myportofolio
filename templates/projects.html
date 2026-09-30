@@ -71,7 +71,7 @@
         const deleteUrlTemplate = "{% url 'main:delete_project' '00000000-0000-0000-0000-000000000000' %}";
         const starUrlTemplate = "{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}";
 
-        const createProjectAjaxUrl = "{% url 'main:create_project_ajax' %}";
+        const CREATE_PROJECT_ENDPOINT = "{% url 'main:create_project_ajax' %}";
 
         const csrfToken = '{{ csrf_token }}';
         const canEdit = {% if user.is_superuser or is_editor %}true{% else %}false{% endif %};
@@ -316,22 +316,29 @@
             submitButton.disabled = true;
 
             try {
-                const response = await fetch(createProjectAjaxUrl, {
+                const response = await fetch(CREATE_PROJECT_ENDPOINT, {
                     method: 'POST',
                     headers: { 'X-CSRFToken': getCookie('csrftoken') },
                     body: new FormData(projectForm),
                 });
+                const result = await response.json().catch(() => ({}));
 
-                if (!response.ok) {
-                    throw new Error('Request failed with status ' + response.status);
+                if (response.ok) {
+                    projectForm.reset();
+                    closeProjectModal();
+                    showToast('Berhasil', 'Proyek baru berhasil ditambahkan!', 'success');
+                    fetchProjects(searchInput.value.trim());
+                    return;
                 }
 
-                projectForm.reset();
-                closeProjectModal();
-                showToast('Berhasil', 'Project baru berhasil ditambahkan!', 'success');
-                fetchProjects(searchInput.value.trim());
+                const messages = result.errors
+                    ? Object.values(result.errors).flat().map(error => error.message)
+                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+
+                showToast('Gagal', messages.join(' '), 'error');
             } catch (error) {
-                showToast('Gagal', 'Project gagal ditambahkan, periksa isian form.', 'error');
+                console.error(error);
+                showToast('Gagal', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
             } finally {
                 submitButton.disabled = false;
             }
