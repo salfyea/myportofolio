@@ -120,3 +120,14 @@ class SkillForm(ModelForm):
                 }
             ),
         }
+
+    def clean_name(self):
+        name = strip_tags(self.cleaned_data["name"]).strip()
+
+        if not name:
+            raise ValidationError("Nama skill tidak boleh kosong.")
+
+        return name
+
+    def clean_category(self):
+        return strip_tags(self.cleaned_data["category"]).strip()
