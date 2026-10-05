@@ -7,6 +7,7 @@ Repositori ini digunakan untuk mengerjakan seluruh rangkaian tugas dan tutorial 
 <p align="center">
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&amp;logo=html5&amp;logoColor=white" alt="HTML5">
   <img src="https://img.shields.io/badge/CSS-663399?style=for-the-badge&amp;logo=css&amp;logoColor=white" alt="CSS">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&amp;logo=javascript&amp;logoColor=black" alt="JavaScript">
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&amp;logo=python&amp;logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&amp;logo=django&amp;logoColor=white" alt="Django">
   <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&amp;logo=git&amp;logoColor=white" alt="Git">
@@ -35,7 +36,7 @@ Website ini merupakan portofolio pribadi yang menampilkan profil, pengalaman, pr
 
 Proyek ini dikerjakan secara **bertahap sepanjang semester** dengan melanjutkan hasil dari tutorial dan tugas sebelumnya. Karena itu, README ini juga diperlakukan sebagai dokumentasi yang terus berkembang: setiap tugas baru akan menambahkan fitur, refleksi, catatan implementasi, serta pembaruan setup tanpa menghilangkan riwayat perkembangan sebelumnya.
 
-Pada tahap awal, portofolio masih bersifat statis. Seiring bertambahnya materi Django, project berkembang menjadi aplikasi yang menggunakan **Model-View-Template (MVT)**, database, form, CRUD, JSON API, fitur interaktif, serta **sistem autentikasi dan otorisasi berbasis peran**.
+Pada tahap awal, portofolio masih bersifat statis. Seiring bertambahnya materi Django, project berkembang menjadi aplikasi yang menggunakan **Model-View-Template (MVT)**, database, form, CRUD, JSON API, fitur interaktif, **sistem autentikasi dan otorisasi berbasis peran**, serta **AJAX dengan JavaScript** untuk memuat dan menambah data tanpa me-reload halaman.
 
 ### Arah Perkembangan Proyek
 
@@ -58,6 +59,8 @@ Authentication, Session & Cookie
       ↓
 Role-based Authorization
       ↓
+AJAX, Toast & Perlindungan XSS
+      ↓
 Fitur tambahan & pengembangan berikutnya
 ```
 
@@ -67,9 +70,9 @@ Fitur tambahan & pengembangan berikutnya
 | --- | --- |
 | **HTML5** | Struktur konten dan elemen semantik halaman |
 | **CSS3** | Warna, tipografi, Grid, Flexbox, media query, dan efek hover |
-| **JavaScript** | Interaksi frontend dan pengambilan data JSON |
+| **JavaScript** | Interaksi frontend: AJAX dengan Fetch API, debouncing pencarian, modal dengan Popover API, dan notifikasi toast |
 | **Python** | Bahasa pemrograman backend |
-| **Django** | Routing, view, model, ORM, form, template, session, autentikasi, dan otorisasi |
+| **Django** | Routing, view, model, ORM, form, template, session, autentikasi, otorisasi, dan respons JSON |
 | **Django Auth & Groups** | Sistem akun bawaan Django serta pembagian peran pengguna |
 | **Git** | Mencatat perubahan kode dan membantu pengembangan bertahap |
 | **GitHub** | Menyimpan repositori, Pull Request, dan dokumentasi proyek |
@@ -91,6 +94,8 @@ Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
 | **Tugas 3** | Refactor template agar extend dari `base.html`; pembuatan model `Skill` menggantikan data Skills yang sebelumnya hardcoded; `ModelForm`, create, update, delete, JSON delivery, dan penampilan data hasil deserialisasi JSON secara langsung pada halaman kelola Skills. |
 | **Tutorial 4** | Implementasi autentikasi bawaan Django (register, login, logout), penanda status login pada navbar, cookie `last_login` beserta penghapusannya saat logout, pembatasan create dan delete `Project` untuk pemilik portofolio, fitur star pada `Project` menggunakan `ManyToManyField`, serta pengamanan endpoint JSON dengan natural key. |
 | **Tugas 4** | Penerapan pola autentikasi dan otorisasi pada bagian `Skill`: penambahan peran **Editor** melalui Django Group, pembatasan hak akses sisi server untuk empat peran, penyembunyian kontrol aksi pada template sesuai peran, fitur star pada `Skill`, serta penggantian proteksi kode rahasia dengan sistem otorisasi Django. |
+| **Tutorial 5** | Penerapan JavaScript dan AJAX pada halaman Projects: komponen notifikasi toast, pemuatan data proyek lewat Fetch API dengan JSON yang dirakit manual (termasuk jumlah dan status star), state loading, kosong, dan error, pencarian dengan debouncing, modal form tambah proyek, pengiriman form lewat AJAX dengan token CSRF, serta perlindungan XSS di sisi tampilan dan server. |
+| **Tugas 5** | Penerapan seluruh pola Tutorial 5 pada bagian `Skill`: tabel skill dimuat lewat AJAX beserta jumlah dan status star, pencarian berdasarkan nama dengan debouncing, tambah skill lewat modal dan `fetch` dengan respons 201, 400, dan 403, toast untuk keberhasilan maupun kegagalan, pembersihan input dengan `strip_tags`, serta pemindahan `getCookie` ke berkas JavaScript bersama. |
 | **Tugas berikutnya** | Akan ditambahkan pada bagian ini beserta perubahan fitur, konsep yang dipelajari, dan catatan implementasinya. |
 
 ### Timeline Implementasi
@@ -105,9 +110,11 @@ flowchart LR
     F[Tugas 3<br/>Skill + CRUD + Live JSON]
     G[Tutorial 4<br/>Auth + Session + Cookie]
     H[Tugas 4<br/>Role-based Authorization]
-    I[Tugas Berikutnya<br/>Pengembangan lanjutan]
+    I[Tutorial 5<br/>AJAX + Toast + XSS]
+    J[Tugas 5<br/>AJAX pada Skill]
+    K[Tugas Berikutnya<br/>Pengembangan lanjutan]
 
-    A --> B --> C --> D --> E --> F --> G --> H --> I
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K
 ```
 
 ---
@@ -121,14 +128,17 @@ Struktur berkas akan berkembang seiring bertambahnya fitur, tetapi tanggung jawa
 | `manage.py` | Menjalankan perintah pengelolaan proyek Django |
 | `portofolio/settings.py` | Konfigurasi proyek, template, static files, dan pengaturan lainnya |
 | `portofolio/urls.py` | Pemetaan URL utama proyek |
-| `main/urls.py` | Pemetaan URL aplikasi, termasuk rute autentikasi dan star |
+| `main/urls.py` | Pemetaan URL aplikasi, termasuk rute autentikasi, star, dan endpoint AJAX |
 | `main/models.py` | Definisi model dan struktur data, termasuk relasi star ke `User` |
-| `main/views.py` | Logika request dan response, termasuk pemeriksaan hak akses |
-| `main/forms.py` | Definisi `ModelForm` |
+| `main/views.py` | Logika request dan response, termasuk pemeriksaan hak akses dan endpoint JSON untuk AJAX |
+| `main/forms.py` | Definisi `ModelForm` beserta pembersihan input dengan `strip_tags` |
 | `main/migrations/` | Riwayat perubahan struktur database, termasuk data migration grup `Editor` |
 | `main/tests.py` | Pengujian fitur |
 | `templates/` | HTML template |
+| `templates/components/` | Komponen template yang dipakai ulang: toast, modal form tambah project dan skill, serta modal hapus |
 | `static/` | CSS, gambar, dan aset statis |
+| `static/js/toast.js` | Fungsi `showToast` untuk notifikasi singkat yang dimuat dari `base.html` |
+| `static/js/utils.js` | Fungsi bantu lintas halaman, saat ini `getCookie` untuk membaca token CSRF |
 | `requirements.txt` | Dependensi Python |
 | `README.md` | Dokumentasi proyek, progres, refleksi, dan penggunaan AI |
 
@@ -191,14 +201,16 @@ Django ORM
    ↓
 QuerySet
    ↓
-Serialization
+Dirakit manual menjadi dictionary
    ↓
-JSON Response
+JsonResponse
    ↓
 JavaScript
    ↓
 DOM
 ```
+
+Sejak Tutorial 5, JSON tidak lagi dibuat dengan `serializers.serialize`, melainkan dirakit manual agar dapat menyertakan informasi yang bergantung pada pengguna yang sedang login, seperti status star.
 
 ### Session dan Pengenalan Pengguna
 
@@ -240,6 +252,48 @@ flowchart TD
     U -->|Create / Delete| F[403 Forbidden]
     E -->|Ya| OK
     E -->|Tidak| F
+```
+
+### AJAX pada Halaman Daftar
+
+Mulai Tutorial 5, halaman Projects dan halaman kelola Skills tidak lagi dirender penuh oleh Django. Django hanya mengirim kerangka halaman, lalu JavaScript mengambil datanya sendiri.
+
+**Menampilkan data:**
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant D as Django
+
+    B->>D: GET /skills/manage/
+    D-->>B: Kerangka halaman tanpa data
+    B->>D: fetch GET /api/skills/?name=...
+    D->>D: Susun JSON, hitung star_count dan is_starred
+    D-->>B: 200 + JSON
+    B->>B: Rakit baris tabel dengan textContent
+```
+
+**Menambah data lewat modal:**
+
+```mermaid
+sequenceDiagram
+    participant U as Superuser
+    participant B as Browser
+    participant D as Django
+
+    U->>B: Isi form di modal lalu submit
+    B->>D: POST /skills/add-ajax/ + X-CSRFToken
+    D->>D: Cek CSRF dan is_superuser, validasi ModelForm
+    alt Bukan superuser
+        D-->>B: 403 + pesan
+        B-->>U: Toast merah
+    else Data tidak valid
+        D-->>B: 400 + daftar error
+        B-->>U: Toast merah berisi pesan validasi
+    else Data valid
+        D-->>B: 201 + pk
+        B-->>U: Modal tertutup, toast hijau, daftar dimuat ulang
+    end
 ```
 
 ---
@@ -357,6 +411,16 @@ http://localhost:8000/
 ```
 
 Pastikan CSS, gambar, template, dan fitur yang memerlukan backend berjalan melalui server Django, bukan dengan membuka file HTML langsung dari file manager.
+
+## 10. Coba Fitur AJAX
+
+Setelah server berjalan, fitur interaktif minggu ini dapat dicoba pada halaman berikut:
+
+| Alamat | Yang bisa dicoba |
+| --- | --- |
+| `/projects/` | Data dimuat lewat AJAX. Ketik di kotak Cari untuk melihat debouncing, dan tambah project lewat modal (khusus superuser). |
+| `/skills/manage/` | Tabel skill dimuat lewat AJAX, dicari berdasarkan nama, dan ditambah lewat modal (khusus superuser). |
+| `/api/projects/` dan `/api/skills/` | Melihat JSON mentahnya, termasuk `star_count` dan `is_starred`. Nilai `is_starred` bergantung pada akun yang sedang login. |
 
 ### Setup Mingguan
 
@@ -688,12 +752,80 @@ python manage.py runserver
 
    Skenario yang sama diulang untuk halaman Projects. Cookie `last_login` dan `sessionid` juga diperiksa melalui tab **Application** pada Developer Tools untuk memastikan keduanya terbit saat login dan terhapus saat logout.
 
+### Tugas 5
+
+1. **Apa itu debouncing dan mengapa teknik ini penting pada fitur pencarian yang menggunakan AJAX?**
+
+   Debouncing adalah teknik untuk menunda sebuah fungsi sampai tidak ada kejadian baru selama jeda tertentu. Gampangnya seperti menunggu seseorang selesai berbicara sebelum kita menjawab: selama ia masih menambah kalimat, kita belum merespons.
+
+   Pada fitur pencarian, kejadian yang dimaksud adalah event `input`, yang terpicu setiap kali satu karakter diketik. Tanpa debouncing, mengetik "python" mengirim enam request berturut-turut ke server, padahal hasil untuk "p", "py", dan "pyt" tidak pernah dibutuhkan pengguna. Request yang berlebihan membebani server, membuat daftar berkedip-kedip, dan berisiko menimbulkan masalah urutan: respons dari request lama bisa tiba setelah respons yang lebih baru, lalu menimpanya.
+
+   Di project ini, setiap karakter baru memanggil `clearTimeout` untuk membatalkan timer sebelumnya, lalu `setTimeout` memulai hitungan 300 ms dari awal (`SEARCH_DEBOUNCE_DELAY`). Request baru benar-benar dikirim hanya jika pengguna berhenti mengetik selama 300 ms, sehingga yang dicari adalah teks akhirnya saja. Tombol Cari dan tombol Enter tetap membatalkan timer lalu mencari langsung, agar pengguna yang sudah selesai mengetik tidak perlu menunggu. Selain itu, `AbortController` membatalkan request sebelumnya yang belum selesai agar hasil lama tidak menimpa hasil terbaru.
+
+   Debouncing berbeda dari throttling. Throttling membatasi sebuah fungsi agar berjalan paling sering sekali per interval, sehingga cocok untuk event yang terus mengalir seperti scroll. Untuk pencarian, yang dibutuhkan adalah hasil dari nilai terakhir, sehingga debouncing lebih tepat.
+
+2. **Apa fungsi `await` pada `fetch()` dan apa yang terjadi jika tidak digunakan?**
+
+   `fetch()` bekerja secara asinkron. Begitu dipanggil, ia tidak menunggu server menjawab, melainkan langsung mengembalikan sebuah *Promise*, yaitu "janji" bahwa hasilnya akan datang nanti. Keyword `await`, yang hanya boleh dipakai di dalam `async function`, menghentikan jalannya fungsi itu sampai Promise selesai, lalu mengambil isinya, yaitu objek `Response`. Bagian lain dari halaman tetap berjalan, jadi tampilan tidak membeku. Karena itu kita bisa menulis `const response = await fetch(url)` dan memakai `response.ok` pada baris berikutnya seolah-olah kode berjalan berurutan.
+
+   Tanpa `await`, variabel `response` hanya berisi Promise yang belum selesai, bukan hasil dari server. Akibatnya `response.ok` bernilai `undefined`, dan `response.json()` gagal karena Promise tidak memiliki method tersebut. Baris-baris berikutnya, seperti merender kartu atau menampilkan toast, juga langsung berjalan sebelum datanya tiba. Kegagalan jaringan pun tidak tertangkap oleh `try/catch` karena penolakan Promise terjadi di luar alur yang ditunggu. Hal yang sama berlaku untuk `response.json()`, yang juga mengembalikan Promise sehingga perlu di-`await`.
+
+   Satu hal lain yang saya pelajari: `fetch()` tidak menolak Promise untuk status 4xx atau 5xx. Karena itu `response.ok` harus selalu diperiksa, seperti pada `addProject` dan `addSkill`, supaya respons 400 atau 403 dari server diperlakukan sebagai kegagalan dan pesan errornya ditampilkan lewat toast.
+
+3. **Apa itu serangan XSS dan mengapa data yang ditampilkan lewat AJAX/JavaScript lebih rentan daripada lewat template Django?**
+
+   Cross-Site Scripting (XSS) adalah serangan ketika penyerang berhasil menyisipkan JavaScript miliknya ke dalam halaman web sehingga kode itu dijalankan di browser pengguna lain. Salah satu jenisnya, *stored XSS*, terjadi ketika kode berbahaya disimpan ke database (misalnya sebagai nama skill) lalu ikut dijalankan setiap kali data itu ditampilkan. Kode tersebut bisa melakukan banyak hal, termasuk membaca cookie `csrftoken` dan mengirim request atas nama korban, sehingga perlindungan CSRF pun ikut tidak berguna.
+
+   Data yang ditampilkan lewat template Django relatif aman karena Django melakukan *auto-escaping* pada setiap `{{ variabel }}`: karakter seperti `<` dan `>` diubah menjadi `&lt;` dan `&gt;`, sehingga browser menampilkannya sebagai teks biasa. Pada AJAX, bagian itu tidak lagi dikerjakan Django. Server hanya mengirim JSON, lalu JavaScript yang merakit tampilannya. Jika nilai dari JSON disisipkan lewat `innerHTML` atau template literal, browser akan menafsirkan tag di dalamnya sebagai HTML sungguhan, misalnya `<img src="x" onerror="...">`. Perlindungan otomatis tadi hilang, dan tanggung jawab melakukan escaping berpindah ke developer.
+
+   Di project ini ada tiga lapis pertahanan. Pertama, kartu project dan baris tabel skill dirakit dengan `createElement` dan `textContent`, yang tidak pernah menafsirkan isinya sebagai HTML. Kedua, di server, method `clean_<field>` pada `ModelForm` memakai `strip_tags` untuk membuang tag dari input. Ketiga, `URLField` menolak URL dengan skema berbahaya seperti `javascript:`. `strip_tags` hanyalah lapisan tambahan: ia tidak cukup dijadikan satu-satunya pertahanan, dan hanya berlaku untuk data baru, sehingga data lama yang telanjur tersimpan tetap harus ditampilkan secara aman.
+
+### Catatan Implementasi Tutorial 5 dan Tugas 5
+
+**1. Halaman hanya merender kerangka, data menyusul lewat AJAX**
+
+Sebelumnya, view mengirim seluruh daftar data ke template dan Django langsung merender semuanya. Sekarang `show_projects` dan `show_skills_manage` hanya mengirim kerangka halaman. Setelah halaman terbuka, JavaScript memanggil `fetch()` ke `/api/projects/` atau `/api/skills/`, lalu merakit hasilnya menjadi kartu atau baris tabel. Selama menunggu, halaman menampilkan keadaan *loading*. Jika datanya kosong, tampil pesan *empty*, dan jika permintaan gagal, tampil pesan *error*. Pengunjung yang belum login tetap dapat membaca data karena endpoint JSON bersifat publik.
+
+**2. JSON dirakit manual, bukan dengan `serializers.serialize`**
+
+Serializer bawaan tidak mengetahui siapa pengguna yang sedang membuka halaman, sehingga tidak bisa menjawab pertanyaan "apakah saya sudah memberi star pada item ini?". Karena itu `get_projects_json` dan `get_skills_json` menyusun dictionary sendiri lalu mengirimkannya dengan `JsonResponse`, lengkap dengan `star_count`, `is_starred` (dihitung dari `request.user`), dan `starred_by_names`. Bentuk `{"pk": ..., "fields": {...}}` saya pertahankan agar JavaScript yang sudah ada tetap cocok.
+
+**3. Tambah data lewat modal dan `fetch`**
+
+Form tambah data berada di dalam modal (Popover API) pada halaman daftar. Saat disubmit, JavaScript membatalkan pengiriman biasa dengan `preventDefault()`, lalu mengirim `FormData` ke `/projects/add-ajax/` atau `/skills/add-ajax/` bersama header `X-CSRFToken` yang dibaca dari cookie `csrftoken`. Server memvalidasi dengan `ModelForm` dan membalas JSON dengan status yang sesuai: **201** jika berhasil, **400** beserta daftar error per field jika tidak valid, dan **403** jika pengirimnya bukan superuser. Balasan itu dibaca JavaScript untuk menentukan langkah berikutnya: menutup modal, menampilkan toast, dan memuat ulang daftar tanpa me-reload halaman.
+
+**4. Mengapa endpoint AJAX tidak memakai `@login_required`**
+
+Dekorator tersebut membalas pengunjung anonim dengan redirect ke halaman login. `fetch()` mengikuti redirect itu dan menerima halaman HTML login berstatus 200, sehingga `response.ok` bernilai `true` dan JavaScript mengira data sudah tersimpan. Karena `AnonymousUser` juga memiliki `is_superuser` bernilai `False`, satu pemeriksaan `is_superuser` sudah cukup untuk menolak pengunjung anonim maupun pengguna biasa dengan JSON 403 yang mudah dibaca JavaScript. Pemeriksaan hak akses tetap dilakukan di dalam view, bukan hanya dengan menyembunyikan tombol.
+
+**5. Jalur lama tetap dipertahankan**
+
+View `create_project` dan `create_skill` yang lama tidak dihapus. Atribut `action` pada form di modal masih mengarah ke view lama, sehingga form tetap dapat dikirim dengan cara biasa jika JavaScript tidak berjalan.
+
+**6. Perlindungan XSS**
+
+Karena kartu dan baris tabel dirakit dengan `createElement` dan `textContent`, fungsi `escapeHtml` seperti pada contoh tutorial tidak diperlukan. Payload seperti `<img src="x" onerror="alert('XSS!')">` akan tampil sebagai teks biasa walaupun lolos ke database. Di sisi server, `clean_title`, `clean_category`, dan `clean_description` pada `ProjectForm`, serta `clean_name` dan `clean_category` pada `SkillForm`, membuang tag HTML dengan `strip_tags` dan menolak nama yang menjadi kosong setelahnya. Pembersihan ini menjadi lapisan kedua, bukan pengganti `textContent`.
+
+**7. Berkas JavaScript bersama**
+
+`showToast` dimuat dari `static/js/toast.js` melalui `base.html`. Fungsi `getCookie` awalnya hanya ada di dalam skrip halaman Projects, sehingga saya memindahkannya ke `static/js/utils.js` agar halaman Skills dapat memakainya tanpa menyalin kode.
+
+**8. Skenario pengujian**
+
+| Skenario | Hasil yang diharapkan |
+| --- | --- |
+| Pengunjung belum login membuka `/skills/manage/` | Tabel termuat lewat AJAX tanpa tombol aksi |
+| Mengetik pelan di kotak Cari | Satu request setelah berhenti mengetik, daftar terfilter |
+| Mencari kata yang tidak ada | Muncul pesan bahwa tidak ada skill dengan nama tersebut |
+| Superuser menambah skill lewat modal | `POST` berstatus 201 dengan header `X-CSRFToken`, modal tertutup, toast hijau, daftar bertambah tanpa reload |
+| Nama skill kosong atau hanya berisi tag HTML | 400, modal tetap terbuka, toast merah berisi pesan dari server |
+| Nama `Py<b>thon</b>` | Tersimpan sebagai `Python` |
+| Pengguna non-superuser memanggil `/skills/add-ajax/` langsung | 403 berupa JSON untuk `POST`, 405 untuk `GET` |
+
 ---
 
+
 # Penggunaan AI
-
-> Bagian ini sengaja dipisahkan dari refleksi teknis di atas agar peran AI dalam proses pengerjaan dapat ditelusuri secara terbuka, termasuk hal-hal yang tidak berjalan sesuai harapan.
-
 ## AI Disclosure
 
 Saya menggunakan AI sebagai **pendamping belajar, debugging assistant, dan alat untuk membantu mengeksplorasi alternatif solusi**.
@@ -705,12 +837,12 @@ AI tidak digunakan sebagai pengganti proses implementasi dan verifikasi. Setiap 
 | Tools | Peran dalam proses |
 | --- | --- |
 | **ChatGPT** | Membantu memahami HTML/CSS, debugging frontend, responsive layout, dan penyusunan dokumentasi/refleksi pada tugas-tugas awal |
-| **Claude** | Membantu memahami konsep `ModelForm`, serializer Django, JSON, CSRF, environment variable, membuat diagram pada README, serta debugging backend/deployment |
-| **Claude Code** | Digunakan pada Tutorial 4 dan Tugas 4 sebagai asisten implementasi di dalam VS Code untuk menulis perubahan kode langsung pada repository, dengan pembagian pekerjaan per branch |
+| **Claude** | Membantu memahami konsep `ModelForm`, serializer Django, JSON, CSRF, AJAX, dan XSS, merencanakan branch, menyusun prompt kerja, membuat diagram pada README, menyusun draf dokumentasi, serta debugging backend/deployment |
+| **Claude Code** | Digunakan pada Tutorial 4 sampai Tugas 5 sebagai asisten implementasi di dalam VS Code untuk menulis perubahan kode langsung pada repository, dengan pembagian pekerjaan per branch |
 
-### Pembagian Peran pada Tugas 
+### Pembagian Peran pada Tutorial 4 sampai Tugas 5
 
-Pada minggu ini saya memisahkan dua jenis penggunaan AI secara sadar:
+Pada empat minggu terakhir saya memisahkan dua jenis penggunaan AI secara sadar:
 
 ```text
 Claude (chat)                     Claude Code (VS Code)
@@ -727,7 +859,7 @@ Menyusun prompt kerja             Membuat commit per fitur
 
 Pemisahan ini saya lakukan supaya perencanaan tidak tercampur dengan eksekusi. Rencana kerja dan pemahaman konsep saya susun lebih dulu, baru instruksinya dijalankan pada repository
 
----
+
 
 ## Strategi Prompting
 
@@ -811,11 +943,33 @@ Satu branch berisi pembatasan hak akses `Project` sempat hampir tidak ikut ter-*
 
 Masalahnya baru ketahuan ketika saya membaca ulang `main/views.py` dan menyadari bahwa dekorator `@login_required` tidak ada di sana. Setelah itu saya membiasakan memeriksa `git log --oneline --graph` setiap selesai satu branch, sebelum berpindah ke pekerjaan berikutnya.
 
+### 9. AI dapat menyimpang dari spesifikasi tanpa memberi tahu
+
+Pada endpoint tambah project lewat AJAX, versi awal yang dibuat AI membalas JSON dengan bentuk yang berbeda dari tutorial: pesan 403 diganti, respons 400 tidak dibungkus dalam `errors`, respons 201 tidak menyertakan `pk`, dan JavaScript tidak membaca isi respons sama sekali. Akibatnya toast selalu menampilkan teks generik, sehingga pesan validasi dari server (misalnya dari `clean_title`) tidak pernah sampai ke pengguna.
+
+Perbedaan itu baru terlihat ketika saya meminta AI membandingkan kodenya dengan spesifikasi. AI mendaftar tujuh perbedaan, lalu saya memutuskan untuk menyamakan semuanya dengan tutorial.
+
+### 10. AI dapat memperkenalkan kesalahan lewat penggantian teks massal
+
+Saat membuat modal form skill dari salinan modal project, AI memakai penggantian teks otomatis dan ikut mengubah `class="project-form"` menjadi `skill-form`, padahal CSS hanya mengenal `project-form`. AI menemukan dan memperbaikinya sendiri saat menguji. Kesalahan seperti ini tidak akan terlihat dari tes backend karena yang rusak hanya tampilan, sehingga tampilan modal tetap perlu diperiksa langsung di browser.
+
+### 11. Hasil uji otomatis dari AI perlu dibaca dengan teliti
+
+Tes otomatis yang ditulis AI sempat menunjukkan bahwa modal ikut dirender untuk pengguna non-superuser. Ternyata teks `add-skill-modal` yang dicocokkan juga muncul di dalam kode JavaScript, bukan hanya pada elemen HTML-nya. Setelah pencarian dipersempit ke elemen HTML-nya, hasilnya benar: modal tidak dirender. Pelajarannya, hasil uji perlu dibaca dengan memeriksa apa sebenarnya yang dicocokkan.
+
+### 12. Branch yang terlewat di-merge kembali terulang
+
+Dua branch, yaitu `feature/xss-protection` dan `feature/search-debounce`, belum masuk ke `main` ketika saya mengira Tutorial 5 sudah selesai. Keduanya terlihat setelah saya memeriksa `git log` dan `git branch --merged`. Merge branch debounce memunculkan konflik pada `projects.html`, yang saya selesaikan dengan mempertahankan kedua sisi (debounce dan tambah project lewat AJAX), lalu diuji ulang.
+
+Seperti sebelumnya, ini kesalahan alur kerja saya, bukan kesalahan AI. Sejak itu saya memeriksa `git branch --merged` sebelum mengumpulkan tugas.
+
+Tidak semua temuan bersifat negatif. Saat memindahkan `getCookie` ke berkas bersama, AI menemukan salinan lain dari fungsi yang sama di widget chat pada `base.html`, lalu melaporkannya tanpa mengubahnya karena berada di luar permintaan. Perilaku seperti inilah yang saya harapkan, melapor, bukan diam-diam memperluas cakupan pekerjaan.
+
 ---
 
 # Perbaikan Manual Setelah Menggunakan AI
 
-AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan penyesuaian dan verifikasi secara manual.
+AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan penyesuaian dan verifikasi secara manual
 
 | Masalah | Bantuan AI | Perbaikan / Verifikasi Manual |
 | --- | --- | --- |
@@ -830,6 +984,9 @@ AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan
 | Status pekerjaan yang salah dilaporkan | Menyatakan tahap sudah selesai | Memverifikasi ulang melalui `git diff` dan memintanya dikerjakan |
 | Branch otorisasi belum ter-*merge* | — | Ditemukan sendiri saat membaca `views.py`, lalu di-*merge* dan diperiksa ulang |
 | Email tampil pada endpoint publik | — | Mengganti akun uji dengan username biasa lalu memeriksa ulang `/api/skills/` |
+| Bentuk respons AJAX menyimpang dari tutorial | Menulis versi awal dan mendaftar perbedaannya saat diminta membandingkan | Menyamakan seluruh bentuk respons dan cara JavaScript membacanya dengan tutorial |
+| Branch `xss-protection` dan `search-debounce` belum ter-*merge* | — | Ditemukan lewat `git log` dan `git branch --merged`, lalu di-*merge*; konflik `projects.html` diselesaikan dengan mempertahankan kedua fitur |
+| `getCookie` hanya tersedia di halaman Projects | Memindahkannya ke `static/js/utils.js` dan melaporkan salinan lain di widget chat | Menguji ulang tambah project setelah pemindahan dan membiarkan salinan lokal widget chat tetap terpisah |
 
 ---
 
@@ -863,6 +1020,8 @@ dibandingkan:
         Memahami hasil akhir
 ```
 
+Pelajaran terbesar dari Tutorial 5 dan Tugas 5 adalah bahwa pekerjaan yang dibagi menjadi banyak branch kecil memang memudahkan saya memeriksa hasil AI, tetapi menuntut disiplin pada hal yang bukan kode: memastikan setiap branch benar-benar masuk ke `main`, dan memverifikasi laporan AI lewat perintah Git atau pengujian langsung, bukan hanya mempercayai ringkasannya.
+
 AI saya gunakan sebagai **learning companion**. Keberhasilan suatu solusi tetap saya ukur dari implementasi dan pengujian pada project yang sebenarnya^^
 
 ---
@@ -873,11 +1032,14 @@ Project ini merupakan project pembelajaran dan belum dimaksudkan sebagai aplikas
 
 Beberapa prinsip yang sudah saya terapkan:
 
-- Form perubahan data menggunakan CSRF protection.
+- Form perubahan data menggunakan CSRF protection, dan permintaan AJAX membawa token yang sama melalui header `X-CSRFToken`.
 - Secret/API key disimpan melalui environment variable dan tidak ditulis pada source code.
 - Password pengguna tidak pernah disimpan sebagai teks biasa, melainkan di-*hash* oleh sistem autentikasi bawaan Django.
 - Cookie hanya menyimpan token sesi dan waktu login terakhir, bukan data kredensial.
 - Pembatasan hak akses dilakukan di **sisi server**, bukan hanya dengan menyembunyikan tombol pada template.
+- Endpoint AJAX membalas JSON 403 untuk pengguna yang tidak berhak, bukan redirect ke halaman login yang bisa disalahartikan sebagai keberhasilan.
+- Data yang ditampilkan lewat JavaScript dirakit dengan `textContent`, bukan `innerHTML`, sehingga isinya tidak pernah ditafsirkan sebagai HTML.
+- Input teks pada form dibersihkan dari tag HTML di server dengan `strip_tags` sebagai lapisan tambahan.
 - Endpoint JSON publik tidak menampilkan id internal database maupun data kontak pengguna.
 
 Mekanisme proteksi berbasis kode rahasia yang digunakan pada Tugas 3 sudah dihapus sepenuhnya dan digantikan oleh sistem autentikasi serta otorisasi Django.
@@ -895,5 +1057,11 @@ Untuk aplikasi production, konfigurasi seperti `DEBUG = False`, penggunaan HTTPS
 - [Django — Using the Django authentication system](https://docs.djangoproject.com/en/5.2/topics/auth/default/)
 - [Django — How to use sessions](https://docs.djangoproject.com/en/5.2/topics/http/sessions/)
 - [Django — Data Migrations](https://docs.djangoproject.com/en/5.2/topics/migrations/#data-migrations)
+- [Django — JsonResponse](https://docs.djangoproject.com/en/5.2/ref/request-response/#jsonresponse-objects)
+- [Django — strip_tags](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.html.strip_tags)
+- [MDN — Using the Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
+- [MDN — async function dan await](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Async_JS)
+- [MDN — Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API)
+- [OWASP — Cross Site Scripting (XSS)](https://owasp.org/www-community/attacks/xss/)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Shields.io](https://shields.io/badges/static-badge)
