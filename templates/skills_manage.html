@@ -19,93 +19,218 @@
             {% endif %}
         </div>
 
-        {% if skill_list %}
-            <table class="skills-table">
-                <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>Kategori</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for skill in skill_list %}
-                        <tr>
-                            <td>{{ skill.name }}</td>
-                            <td>{{ skill.category }}</td>
-                            <td class="skills-table__actions">
-                                {% if user.is_superuser or is_editor %}
-                                    <a
-                                        href="{% url 'main:update_skill' skill.id %}"
-                                        class="button button-secondary"
-                                    >
-                                        Edit
-                                    </a>
-                                {% endif %}
-
-                                {% if user.is_superuser %}
-                                    {% include "components/skill_delete_modal.html" with skill=skill %}
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p class="empty-state">
-                Belum ada skill yang ditambahkan.
-            </p>
-        {% endif %}
-
-        <div class="skills-json-section">
-            <h2 class="section-title">Data dari JSON (live)</h2>
-            <div id="skills-json-output"></div>
+        <div id="loading">
+            <p class="empty-state">Memuat skill...</p>
         </div>
+
+        <div id="error" class="hide">
+            <p class="empty-state">Gagal memuat skill. Silakan coba lagi nanti.</p>
+        </div>
+
+        <div id="empty" class="hide">
+            <p class="empty-state">Belum ada skill yang ditambahkan.</p>
+        </div>
+
+        <table id="skills-table" class="skills-table hide">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Kategori</th>
+                    <th>Star</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="skills-body"></tbody>
+        </table>
 
     </div>
 </section>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const outputEl = document.getElementById("skills-json-output");
+    (function () {
+        const SKILL_ID_PLACEHOLDER = '00000000-0000-0000-0000-000000000000';
 
-        fetch("{% url 'main:get_skills_json' %}")
-            .then(function (response) {
+        const skillsApiUrl = "{% url 'main:get_skills_json' %}";
+        const updateUrlTemplate = "{% url 'main:update_skill' '00000000-0000-0000-0000-000000000000' %}";
+        const deleteUrlTemplate = "{% url 'main:delete_skill' '00000000-0000-0000-0000-000000000000' %}";
+
+        const csrfToken = '{{ csrf_token }}';
+        const canEdit = {% if user.is_superuser or is_editor %}true{% else %}false{% endif %};
+        const canDelete = {% if user.is_superuser %}true{% else %}false{% endif %};
+
+        const sectionIds = ['loading', 'error', 'empty', 'skills-table'];
+        const skillsBody = document.getElementById('skills-body');
+
+        let currentController = null;
+
+        function buildUrl(template, skillId) {
+            return template.replace(SKILL_ID_PLACEHOLDER, skillId);
+        }
+
+        function createElement(tagName, className, text) {
+            const element = document.createElement(tagName);
+
+            if (className) {
+                element.className = className;
+            }
+
+            if (text !== undefined) {
+                element.textContent = text;
+            }
+
+            return element;
+        }
+
+        function createCsrfInput() {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrfmiddlewaretoken';
+            input.value = csrfToken;
+            return input;
+        }
+
+        // Show exactly one of the loading / error / empty / table containers.
+        function displayPageSection(sectionId) {
+            sectionIds.forEach(function (id) {
+                document.getElementById(id).classList.toggle('hide', id !== sectionId);
+            });
+        }
+
+        function buildDeleteControls(skill) {
+            const modalId = 'delete-skill-' + skill.pk;
+            const fragment = document.createDocumentFragment();
+
+            const openButton = createElement('button', 'button button-danger', 'Hapus');
+            openButton.type = 'button';
+            openButton.setAttribute('popovertarget', modalId);
+            fragment.appendChild(openButton);
+
+            const modal = createElement('div', 'delete-modal');
+            modal.id = modalId;
+            modal.setAttribute('popover', 'auto');
+
+            const backdrop = createElement('button', 'delete-modal__backdrop');
+            backdrop.type = 'button';
+            backdrop.setAttribute('popovertarget', modalId);
+            backdrop.setAttribute('popovertargetaction', 'hide');
+            backdrop.setAttribute('aria-label', 'Tutup');
+            modal.appendChild(backdrop);
+
+            const content = createElement('div', 'delete-modal__content');
+            content.appendChild(createElement('h2', '', 'Hapus Skill?'));
+
+            const question = createElement('p', '', 'Apakah kamu yakin ingin menghapus ');
+            question.appendChild(createElement('strong', '', skill.fields.name));
+            question.appendChild(document.createTextNode('?'));
+            content.appendChild(question);
+
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = buildUrl(deleteUrlTemplate, skill.pk);
+            form.appendChild(createCsrfInput());
+
+            const actions = createElement('div', 'delete-modal__actions');
+
+            const cancelButton = createElement('button', 'button button-secondary', 'Batal');
+            cancelButton.type = 'button';
+            cancelButton.setAttribute('popovertarget', modalId);
+            cancelButton.setAttribute('popovertargetaction', 'hide');
+            actions.appendChild(cancelButton);
+
+            const confirmButton = createElement('button', 'button button-danger', 'Ya, Hapus');
+            confirmButton.type = 'submit';
+            actions.appendChild(confirmButton);
+
+            form.appendChild(actions);
+            content.appendChild(form);
+            modal.appendChild(content);
+            fragment.appendChild(modal);
+
+            return fragment;
+        }
+
+        function buildSkillRowElement(skill) {
+            const fields = skill.fields;
+
+            const row = document.createElement('tr');
+            row.id = 'skill-' + skill.pk;
+
+            row.appendChild(createElement('td', '', fields.name));
+            row.appendChild(createElement('td', '', fields.category));
+
+            // Read-only star count; toggling still happens on the landing page.
+            const starCell = document.createElement('td');
+            starCell.appendChild(createElement(
+                'span',
+                fields.is_starred ? 'star-button star-button--active' : 'star-button',
+                (fields.is_starred ? '★ ' : '☆ ') + fields.star_count
+            ));
+            row.appendChild(starCell);
+
+            const actionsCell = createElement('td', 'skills-table__actions');
+
+            if (canEdit) {
+                const editLink = createElement('a', 'button button-secondary', 'Edit');
+                editLink.href = buildUrl(updateUrlTemplate, skill.pk);
+                actionsCell.appendChild(editLink);
+            }
+
+            if (canDelete) {
+                actionsCell.appendChild(buildDeleteControls(skill));
+            }
+
+            row.appendChild(actionsCell);
+            return row;
+        }
+
+        async function fetchSkills(name) {
+            // Cancel the previous request so a slow, older response
+            // cannot overwrite the results of a newer one.
+            if (currentController) {
+                currentController.abort();
+            }
+
+            const controller = new AbortController();
+            currentController = controller;
+
+            displayPageSection('loading');
+
+            const url = new URL(skillsApiUrl, window.location.origin);
+            if (name) {
+                url.searchParams.set('name', name);
+            }
+
+            try {
+                const response = await fetch(url, { signal: controller.signal });
+
                 if (!response.ok) {
-                    throw new Error("Gagal mengambil data (status " + response.status + ")");
+                    throw new Error('Request failed with status ' + response.status);
                 }
-                return response.json();
-            })
-            .then(function (skills) {
-                outputEl.innerHTML = "";
 
-                if (!skills || skills.length === 0) {
-                    const emptyEl = document.createElement("p");
-                    emptyEl.className = "empty-state";
-                    emptyEl.textContent = "Belum ada skill yang ditambahkan.";
-                    outputEl.appendChild(emptyEl);
+                const skills = await response.json();
+
+                if (skills.length === 0) {
+                    skillsBody.replaceChildren();
+                    displayPageSection('empty');
                     return;
                 }
 
-                const list = document.createElement("ul");
-                list.className = "skills-json-list";
+                skillsBody.replaceChildren(...skills.map(buildSkillRowElement));
+                displayPageSection('skills-table');
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
 
-                skills.forEach(function (item) {
-                    const fields = item.fields || {};
-                    const listItem = document.createElement("li");
-                    listItem.textContent = fields.name + " - " + fields.category;
-                    list.appendChild(listItem);
-                });
+                displayPageSection('error');
+            } finally {
+                if (currentController === controller) {
+                    currentController = null;
+                }
+            }
+        }
 
-                outputEl.appendChild(list);
-            })
-            .catch(function (error) {
-                outputEl.innerHTML = "";
-                const errorEl = document.createElement("p");
-                errorEl.className = "error-state";
-                errorEl.textContent = "Gagal memuat data skill: " + error.message;
-                outputEl.appendChild(errorEl);
-            });
-    });
+        fetchSkills();
+    })();
 </script>
 {% endblock %}
