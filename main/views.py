@@ -337,6 +337,7 @@ def show_skills_manage(request):
     context = {
         "name": PROFILE_NAME,
         "is_editor": is_editor(request.user),
+        "form": SkillForm(),
     }
     return render(request, "skills_manage.html", context)
 
@@ -359,6 +360,32 @@ def create_skill(request):
         "form": form,
     }
     return render(request, "skills_form.html", context)
+
+
+@require_POST
+def create_skill_ajax(request):
+    """Create a skill from the modal form and answer with JSON.
+
+    Deliberately not ``@login_required``: that decorator answers anonymous
+    users with a 302 redirect to the login page, which fetch() follows and
+    turns into an HTML page. An AJAX client needs a machine-readable 403.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menambahkan skill."},
+            status=403,
+        )
+
+    form = SkillForm(request.POST)
+
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+    skill = form.save()
+    return JsonResponse(
+        {"message": "Skill berhasil ditambahkan.", "pk": str(skill.id)},
+        status=201,
+    )
 
 
 @login_required(login_url="/login/")
