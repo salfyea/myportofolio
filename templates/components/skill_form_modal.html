@@ -1,0 +1,67 @@
+<div
+    id="add-skill-modal"
+    class="project-modal"
+    popover="auto"
+    role="dialog"
+    aria-labelledby="add-skill-modal-title"
+>
+    <button
+        type="button"
+        class="project-modal__backdrop"
+        popovertarget="add-skill-modal"
+        popovertargetaction="hide"
+        aria-label="Tutup"
+    ></button>
+
+    <div class="project-modal__content">
+        <div class="project-modal__header">
+            <h2 id="add-skill-modal-title">Tambah Skill</h2>
+
+            <button
+                type="button"
+                class="project-modal__close"
+                popovertarget="add-skill-modal"
+                popovertargetaction="hide"
+                aria-label="Tutup"
+            >&times;</button>
+        </div>
+
+        <form
+            id="skill-form"
+            method="post"
+            action="{% url 'main:create_skill' %}"
+            class="project-form"
+        >
+            {% csrf_token %}
+
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
+
+                    {{ field }}
+
+                    {% for error in field.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="form-actions">
+                <button type="submit" class="button">
+                    Tambah Skill
+                </button>
+
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    popovertarget="add-skill-modal"
+                    popovertargetaction="hide"
+                >
+                    Batal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -10,12 +10,13 @@
             <h1 class="section-title">Kelola Skills</h1>
 
             {% if user.is_superuser %}
-                <a
-                    href="{% url 'main:create_skill' %}"
+                <button
+                    type="button"
                     class="button"
+                    popovertarget="add-skill-modal"
                 >
                     + Tambah Skill
-                </a>
+                </button>
             {% endif %}
         </div>
 
@@ -66,6 +67,10 @@
     </div>
 </section>
 
+{% if user.is_superuser %}
+    {% include "components/skill_form_modal.html" %}
+{% endif %}
+
 <script>
     (function () {
         const SKILL_ID_PLACEHOLDER = '00000000-0000-0000-0000-000000000000';
@@ -73,6 +78,8 @@
         const skillsApiUrl = "{% url 'main:get_skills_json' %}";
         const updateUrlTemplate = "{% url 'main:update_skill' '00000000-0000-0000-0000-000000000000' %}";
         const deleteUrlTemplate = "{% url 'main:delete_skill' '00000000-0000-0000-0000-000000000000' %}";
+
+        const CREATE_SKILL_ENDPOINT = "{% url 'main:create_skill_ajax' %}";
 
         const csrfToken = '{{ csrf_token }}';
         const canEdit = {% if user.is_superuser or is_editor %}true{% else %}false{% endif %};
@@ -85,6 +92,7 @@
         let searchDebounceTimer = null;
         const emptyMessage = document.getElementById('empty-message');
         const skillsBody = document.getElementById('skills-body');
+        const skillForm = document.getElementById('skill-form');
 
         let currentController = null;
 
@@ -260,6 +268,45 @@
 
         function searchSkills() {
             fetchSkills(searchInput.value.trim());
+        }
+
+        async function addSkill(event) {
+            event.preventDefault();
+
+            const submitButton = skillForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch(CREATE_SKILL_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: new FormData(skillForm),
+                });
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    skillForm.reset();
+                    document.getElementById('add-skill-modal').hidePopover();
+                    showToast('Berhasil', 'Skill baru berhasil ditambahkan!', 'success');
+                    searchSkills();
+                    return;
+                }
+
+                const messages = result.errors
+                    ? Object.values(result.errors).flat().map(error => error.message)
+                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+
+                showToast('Gagal', messages.join(' '), 'error');
+            } catch (error) {
+                console.error(error);
+                showToast('Gagal', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+            } finally {
+                submitButton.disabled = false;
+            }
+        }
+
+        if (skillForm) {
+            skillForm.addEventListener('submit', addSkill);
         }
 
         // Wait until the user stops typing before sending a request.
