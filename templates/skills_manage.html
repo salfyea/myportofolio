@@ -19,6 +19,26 @@
             {% endif %}
         </div>
 
+        <form
+            id="skills-search-form"
+            class="project-search"
+        >
+            <input
+                id="skills-search-input"
+                type="search"
+                name="name"
+                placeholder="Cari berdasarkan nama skill"
+                class="project-search__input"
+            >
+
+            <button
+                type="submit"
+                class="button"
+            >
+                Cari
+            </button>
+        </form>
+
         <div id="loading">
             <p class="empty-state">Memuat skill...</p>
         </div>
@@ -28,7 +48,7 @@
         </div>
 
         <div id="empty" class="hide">
-            <p class="empty-state">Belum ada skill yang ditambahkan.</p>
+            <p id="empty-message" class="empty-state"></p>
         </div>
 
         <table id="skills-table" class="skills-table hide">
@@ -59,6 +79,11 @@
         const canDelete = {% if user.is_superuser %}true{% else %}false{% endif %};
 
         const sectionIds = ['loading', 'error', 'empty', 'skills-table'];
+        const searchForm = document.getElementById('skills-search-form');
+        const searchInput = document.getElementById('skills-search-input');
+        const SEARCH_DEBOUNCE_DELAY = 300;
+        let searchDebounceTimer = null;
+        const emptyMessage = document.getElementById('empty-message');
         const skillsBody = document.getElementById('skills-body');
 
         let currentController = null;
@@ -210,6 +235,9 @@
                 const skills = await response.json();
 
                 if (skills.length === 0) {
+                    emptyMessage.textContent = name
+                        ? 'Tidak ada skill dengan nama tersebut.'
+                        : 'Belum ada skill yang ditambahkan.';
                     skillsBody.replaceChildren();
                     displayPageSection('empty');
                     return;
@@ -230,7 +258,24 @@
             }
         }
 
-        fetchSkills();
+        function searchSkills() {
+            fetchSkills(searchInput.value.trim());
+        }
+
+        // Wait until the user stops typing before sending a request.
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(searchSkills, SEARCH_DEBOUNCE_DELAY);
+        });
+
+        searchForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            // Search right away and drop the pending debounced search.
+            clearTimeout(searchDebounceTimer);
+            searchSkills();
+        });
+
+        searchSkills();
     })();
 </script>
 {% endblock %}
