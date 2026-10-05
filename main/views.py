@@ -14,9 +14,8 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.core import serializers
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -247,13 +246,37 @@ def update_project(request, project_id):
 
 
 def get_skills_json(request):
-    """Return skills as JSON."""
-    skills = Skill.objects.all()
-    skills_json = serializers.serialize(
-        "json", skills, use_natural_foreign_keys=True
-    )
+    """Return skills as JSON, optionally filtered by the ``name`` query param.
 
-    return HttpResponse(skills_json, content_type="application/json")
+    Built by hand instead of with ``serializers.serialize`` so each item can
+    carry per-request data such as whether the current user starred it.
+    """
+    name_query = request.GET.get("name", "").strip()
+    skills = Skill.objects.prefetch_related("starred_by")
+
+    if name_query:
+        skills = skills.filter(name__icontains=name_query)
+
+    data = []
+    for skill in skills:
+        # .all() reuses the prefetched users, so no extra query per skill.
+        starred_users = skill.starred_by.all()
+
+        data.append({
+            "pk": str(skill.pk),
+            "fields": {
+                "name": skill.name,
+                "icon_url": skill.icon_url,
+                "category": skill.category,
+                "star_count": len(starred_users),
+                "is_starred": any(
+                    user.pk == request.user.pk for user in starred_users
+                ),
+                "starred_by_names": [user.username for user in starred_users],
+            },
+        })
+
+    return JsonResponse(data, safe=False)
 
 
 @require_POST
@@ -310,10 +333,9 @@ def chat_with_ai(request):
 
 
 def show_skills_manage(request):
-    """Render the skills management page listing every Skill."""
+    """Render the skills management page shell; the rows are loaded via AJAX."""
     context = {
         "name": PROFILE_NAME,
-        "skill_list": Skill.objects.all(),
         "is_editor": is_editor(request.user),
     }
     return render(request, "skills_manage.html", context)
