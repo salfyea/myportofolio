@@ -11,14 +11,16 @@ def contact_list(request):
 
 
 def contact_add(request):
-    if request.method == "POST":
-        Contact.objects.create(
-            name=request.POST.get("name"),
-            email=request.POST.get("email"),
-            phone=request.POST.get("phone", ""),
-        )
-    contacts = Contact.objects.all()
-    return render(request, "contacts/_contact_rows.html", {"contacts": contacts})
+    if request.method != "POST":
+        return HttpResponse("")
+
+    contact = Contact.objects.create(
+        name=request.POST.get("name"),
+        email=request.POST.get("email"),
+        phone=request.POST.get("phone", ""),
+    )
+    # Only the new row is returned; the form appends it with hx-swap="beforeend".
+    return render(request, "contacts/_contact_added.html", {"contact": contact})
 
 
 @require_http_methods(["DELETE"])
