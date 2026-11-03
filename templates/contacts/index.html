@@ -20,6 +20,13 @@
     <button type="submit">Tambah</button>
   </form>
 
+  <input type="search" name="q" placeholder="Cari kontak..."
+         hx-get="{% url 'contacts:contact_search' %}"
+         hx-trigger="keyup changed delay:300ms, search"
+         hx-target="#contact-rows"
+         hx-indicator="#search-indicator">
+  <span id="search-indicator" class="htmx-indicator">Mencari...</span>
+
   <table>
     <thead><tr><th>Nama</th><th>Email</th><th></th></tr></thead>
     <tbody id="contact-rows">
