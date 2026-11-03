@@ -37,3 +37,30 @@ class ContactAddTest(TestCase):
         self.client.get(reverse("contacts:contact_add"))
 
         self.assertEqual(Contact.objects.count(), 0)
+
+
+class ContactDeleteTest(TestCase):
+    def setUp(self):
+        self.contact = Contact.objects.create(name="Citra", email="citra@example.com")
+
+    def test_delete_removes_contact_and_returns_empty_200(self):
+        response = self.client.delete(
+            reverse("contacts:contact_delete", args=[self.contact.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+        self.assertFalse(Contact.objects.filter(pk=self.contact.pk).exists())
+
+    def test_delete_rejects_other_methods(self):
+        response = self.client.post(
+            reverse("contacts:contact_delete", args=[self.contact.pk])
+        )
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Contact.objects.filter(pk=self.contact.pk).exists())
+
+    def test_delete_missing_contact_returns_404(self):
+        response = self.client.delete(reverse("contacts:contact_delete", args=[999]))
+
+        self.assertEqual(response.status_code, 404)
