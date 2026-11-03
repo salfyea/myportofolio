@@ -87,3 +87,45 @@ class ContactSearchTest(TestCase):
         response = self.client.get(reverse("contacts:contact_search"), {"q": "zzz"})
 
         self.assertContains(response, "Tidak ada kontak.")
+
+
+class ContactEditTest(TestCase):
+    def setUp(self):
+        self.contact = Contact.objects.create(name="Dewi", email="dewi@example.com")
+
+    def test_edit_returns_form_row(self):
+        response = self.client.get(
+            reverse("contacts:contact_edit", args=[self.contact.pk])
+        )
+
+        self.assertTemplateUsed(response, "contacts/_contact_edit_row.html")
+        self.assertContains(response, 'value="Dewi"')
+
+    def test_row_returns_display_row(self):
+        response = self.client.get(
+            reverse("contacts:contact_row", args=[self.contact.pk])
+        )
+
+        self.assertTemplateUsed(response, "contacts/_contact_row.html")
+        self.assertContains(response, "dewi@example.com")
+
+    def test_update_saves_put_body_and_returns_display_row(self):
+        response = self.client.put(
+            reverse("contacts:contact_update", args=[self.contact.pk]),
+            data="name=Dewi+Baru&email=baru%40example.com",
+            content_type="application/x-www-form-urlencoded",
+        )
+        self.contact.refresh_from_db()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.contact.name, "Dewi Baru")
+        self.assertEqual(self.contact.email, "baru@example.com")
+        self.assertTemplateUsed(response, "contacts/_contact_row.html")
+
+    def test_update_rejects_post(self):
+        response = self.client.post(
+            reverse("contacts:contact_update", args=[self.contact.pk]),
+            {"name": "X", "email": "x@example.com"},
+        )
+
+        self.assertEqual(response.status_code, 405)

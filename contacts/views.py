@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, QueryDict
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
@@ -36,3 +36,24 @@ def contact_search(request):
         else Contact.objects.all()
     )
     return render(request, "contacts/_contact_rows.html", {"contacts": contacts})
+
+
+def contact_edit(request, pk):
+    contact = get_object_or_404(Contact, pk=pk)
+    return render(request, "contacts/_contact_edit_row.html", {"contact": contact})
+
+
+def contact_row(request, pk):
+    contact = get_object_or_404(Contact, pk=pk)
+    return render(request, "contacts/_contact_row.html", {"contact": contact})
+
+
+@require_http_methods(["PUT"])
+def contact_update(request, pk):
+    contact = get_object_or_404(Contact, pk=pk)
+    # Django does not fill request.POST for PUT, so parse the raw body.
+    data = QueryDict(request.body)
+    contact.name = data.get("name", contact.name)
+    contact.email = data.get("email", contact.email)
+    contact.save()
+    return render(request, "contacts/_contact_row.html", {"contact": contact})
