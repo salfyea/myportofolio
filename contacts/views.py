@@ -15,6 +15,7 @@ def contact_add(request):
         Contact.objects.create(
             name=request.POST.get("name"),
             email=request.POST.get("email"),
+            phone=request.POST.get("phone", ""),
         )
     contacts = Contact.objects.all()
     return render(request, "contacts/_contact_rows.html", {"contacts": contacts})
@@ -55,5 +56,6 @@ def contact_update(request, pk):
     data = QueryDict(request.body)
     contact.name = data.get("name", contact.name)
     contact.email = data.get("email", contact.email)
+    contact.phone = data.get("phone", contact.phone)
     contact.save()
     return render(request, "contacts/_contact_row.html", {"contact": contact})

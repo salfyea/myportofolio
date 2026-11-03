@@ -17,6 +17,7 @@
     {% csrf_token %}
     <input type="text" name="name" placeholder="Nama" required>
     <input type="email" name="email" placeholder="Email" required>
+    <input type="tel" name="phone" placeholder="Telepon">
     <button type="submit">Tambah</button>
   </form>
 
@@ -28,7 +29,7 @@
   <span id="search-indicator" class="htmx-indicator">Mencari...</span>
 
   <table>
-    <thead><tr><th>Nama</th><th>Email</th><th></th></tr></thead>
+    <thead><tr><th>Nama</th><th>Email</th><th>Telepon</th><th></th></tr></thead>
     <tbody id="contact-rows">
       {% include "contacts/_contact_rows.html" %}
     </tbody>
