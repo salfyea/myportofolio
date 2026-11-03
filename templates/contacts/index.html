@@ -9,6 +9,17 @@
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <h1>Daftar Kontak</h1>
 
+  <h2>Tambah Kontak</h2>
+  <form hx-post="{% url 'contacts:contact_add' %}"
+        hx-target="#contact-rows"
+        hx-swap="innerHTML"
+        hx-on::after-request="if (event.detail.successful) this.reset()">
+    {% csrf_token %}
+    <input type="text" name="name" placeholder="Nama" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <button type="submit">Tambah</button>
+  </form>
+
   <table>
     <thead><tr><th>Nama</th><th>Email</th><th></th></tr></thead>
     <tbody id="contact-rows">
