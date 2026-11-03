@@ -28,11 +28,23 @@ class ContactAddTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "contacts/_contact_rows.html")
+        self.assertTemplateUsed(response, "contacts/_contact_row.html")
         self.assertNotContains(response, "<html")
         self.assertContains(response, "Budi")
         self.assertContains(response, "0812")
         self.assertEqual(Contact.objects.count(), 1)
+
+    def test_add_returns_only_the_new_row(self):
+        Contact.objects.create(name="Lama", email="lama@example.com")
+
+        response = self.client.post(
+            reverse("contacts:contact_add"),
+            {"name": "Baru", "email": "baru@example.com"},
+        )
+
+        self.assertContains(response, "Baru")
+        self.assertNotContains(response, "Lama")
+        self.assertContains(response, 'hx-swap-oob="delete"')
 
     def test_get_does_not_create_contact(self):
         self.client.get(reverse("contacts:contact_add"))
