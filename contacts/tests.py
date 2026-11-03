@@ -24,13 +24,14 @@ class ContactAddTest(TestCase):
     def test_add_creates_contact_and_returns_rows_fragment(self):
         response = self.client.post(
             reverse("contacts:contact_add"),
-            {"name": "Budi", "email": "budi@example.com"},
+            {"name": "Budi", "email": "budi@example.com", "phone": "0812"},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "contacts/_contact_rows.html")
         self.assertNotContains(response, "<html")
         self.assertContains(response, "Budi")
+        self.assertContains(response, "0812")
         self.assertEqual(Contact.objects.count(), 1)
 
     def test_get_does_not_create_contact(self):
@@ -112,7 +113,7 @@ class ContactEditTest(TestCase):
     def test_update_saves_put_body_and_returns_display_row(self):
         response = self.client.put(
             reverse("contacts:contact_update", args=[self.contact.pk]),
-            data="name=Dewi+Baru&email=baru%40example.com",
+            data="name=Dewi+Baru&email=baru%40example.com&phone=0899",
             content_type="application/x-www-form-urlencoded",
         )
         self.contact.refresh_from_db()
@@ -120,6 +121,7 @@ class ContactEditTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.contact.name, "Dewi Baru")
         self.assertEqual(self.contact.email, "baru@example.com")
+        self.assertEqual(self.contact.phone, "0899")
         self.assertTemplateUsed(response, "contacts/_contact_row.html")
 
     def test_update_rejects_post(self):
