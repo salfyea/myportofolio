@@ -64,3 +64,26 @@ class ContactDeleteTest(TestCase):
         response = self.client.delete(reverse("contacts:contact_delete", args=[999]))
 
         self.assertEqual(response.status_code, 404)
+
+
+class ContactSearchTest(TestCase):
+    def setUp(self):
+        Contact.objects.create(name="Annisa", email="annisa@example.com")
+        Contact.objects.create(name="Budi", email="budi@example.com")
+
+    def test_search_filters_case_insensitively(self):
+        response = self.client.get(reverse("contacts:contact_search"), {"q": "ANN"})
+
+        self.assertContains(response, "Annisa")
+        self.assertNotContains(response, "Budi")
+
+    def test_empty_query_returns_all_contacts(self):
+        response = self.client.get(reverse("contacts:contact_search"), {"q": ""})
+
+        self.assertContains(response, "Annisa")
+        self.assertContains(response, "Budi")
+
+    def test_no_match_shows_empty_message(self):
+        response = self.client.get(reverse("contacts:contact_search"), {"q": "zzz"})
+
+        self.assertContains(response, "Tidak ada kontak.")

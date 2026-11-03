@@ -26,3 +26,13 @@ def contact_delete(request, pk):
     contact.delete()
     # Must stay 200: HTMX does not swap on 204 No Content.
     return HttpResponse("")
+
+
+def contact_search(request):
+    query = request.GET.get("q", "")
+    contacts = (
+        Contact.objects.filter(name__icontains=query)
+        if query
+        else Contact.objects.all()
+    )
+    return render(request, "contacts/_contact_rows.html", {"contacts": contacts})
