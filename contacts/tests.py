@@ -45,6 +45,7 @@ class ContactAddTest(TestCase):
         self.assertContains(response, "Baru")
         self.assertNotContains(response, "Lama")
         self.assertContains(response, 'hx-swap-oob="delete"')
+        self.assertContains(response, "Kontak berhasil ditambahkan!")
 
     def test_get_does_not_create_contact(self):
         self.client.get(reverse("contacts:contact_add"))
