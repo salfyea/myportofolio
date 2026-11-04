@@ -826,6 +826,54 @@ Karena kartu dan baris tabel dirakit dengan `createElement` dan `textContent`, f
 | Nama `Py<b>thon</b>` | Tersimpan sebagai `Python` |
 | Pengguna non-superuser memanggil `/skills/add-ajax/` langsung | 403 berupa JSON untuk `POST`, 405 untuk `GET` |
 
+### Catatan Implementasi Tutorial 6
+
+> Tutorial 6 bersifat latihan dan tidak wajib. Kerangka ini sengaja dikosongkan di bagian penjelasan; isi dengan penjelasanmu sendiri, lalu hapus petunjuk dalam tanda `<!-- -->` dan baris `_(isi ...)_`.
+
+**1. HTMX dibandingkan dengan AJAX dan `fetch` (Tutorial 5)**
+
+<!-- Server mengirim potongan HTML (fragment), bukan JSON yang dirakit ulang oleh JavaScript. Apa untung dan ruginya? -->
+
+_(isi catatanmu)_
+
+**2. Aplikasi `contacts` terpisah dari `main`**
+
+<!-- Kenapa dibuat app baru (namespace `contacts:`, template di `templates/contacts/`) dan bukan menimpa halaman Projects? -->
+
+_(isi catatanmu)_
+
+**3. Partial template dan atribut `hx-*`**
+
+| Atribut | Dipakai untuk | Contoh pada proyek |
+| --- | --- | --- |
+| `hx-post` | Tambah kontak | form tambah |
+| `hx-delete` | Hapus kontak | tombol Hapus dengan `hx-confirm` |
+| `hx-get` + `hx-trigger` | Cari kontak (debounce 300 ms) | kolom Cari |
+| `hx-get` / `hx-put` | Edit di dalam baris | tombol Edit, Simpan, Batal |
+| `hx-target` / `hx-swap` | Tempat dan cara pemasangan response | `#contact-rows`, `closest tr`, `outerHTML` |
+
+<!-- Jelaskan alur: event, request, fragment HTML, swap. -->
+
+_(isi catatanmu)_
+
+**4. Hal-hal yang perlu diperhatikan**
+
+<!-- Contoh: CSRF lewat hx-headers di body, DELETE harus mengembalikan 200 dengan isi kosong (bukan 204), dan request PUT dibaca dengan QueryDict(request.body). -->
+
+_(isi catatanmu)_
+
+**5. Latihan**
+
+<!-- Field `phone`, hx-swap="beforeend" dengan baris baru saja, dan pesan feedback lewat hx-swap-oob. Apa yang kamu pelajari dari masing-masing? -->
+
+_(isi catatanmu)_
+
+**6. Pengujian**
+
+<!-- 15 test di contacts/tests.py. Bagian apa yang diuji, dan apa yang belum teruji (misalnya perilaku di browser)? -->
+
+_(isi catatanmu)_
+
 ### Catatan Implementasi Tutorial 7
 
 > Kerangka ini sengaja dikosongkan di bagian penjelasan. Isi dengan penjelasanmu sendiri, lalu hapus petunjuk dalam tanda `<!-- -->` dan baris `_(isi ...)_`.
