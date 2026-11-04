@@ -19,6 +19,7 @@ class ProjectAPITest(APITestCase):
         )
         self.list_url = reverse("api:project-list")
         self.detail_url = reverse("api:project-detail", args=[self.project.id])
+        self.star_url = reverse("api:project-star", args=[self.project.id])
         self.payload = {
             "title": "New project", "description": "A useful app", "category": "Backend",
             "link": "https://example.com/", "project_image_url": "",
@@ -135,3 +136,34 @@ class ProjectAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(self.client.get(self.detail_url).status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_star_toggles_for_logged_in_user(self):
+        self.client.force_authenticate(user=self.visitor)
+
+        first = self.client.post(self.star_url)
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertTrue(first.data["is_starred"])
+        self.assertEqual(first.data["star_count"], 1)
+        self.assertEqual(first.data["starred_by_names"], "visitor")
+
+        second = self.client.post(self.star_url)
+        self.assertFalse(second.data["is_starred"])
+        self.assertEqual(second.data["star_count"], 0)
+
+    def test_star_requires_login_and_post(self):
+        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.client.get(self.star_url).status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(user=self.visitor)
+        self.assertEqual(
+            self.client.get(self.star_url).status_code, status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+    def test_is_starred_depends_on_viewer(self):
+        self.project.starred_by.add(self.visitor)
+
+        self.client.force_authenticate(user=self.visitor)
+        self.assertTrue(self.client.get(self.list_url).data[0]["is_starred"])
+
+        self.client.force_authenticate(user=self.owner)
+        self.assertFalse(self.client.get(self.list_url).data[0]["is_starred"])
