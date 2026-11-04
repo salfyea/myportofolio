@@ -151,6 +151,19 @@ class ProjectTest(TestCase):
         # The page must always set the csrftoken cookie for AJAX writes.
         self.assertContains(response, "csrfmiddlewaretoken")
 
+    def test_projects_page_renders_for_every_role(self):
+        for user in (None, self.visitor, self.owner):
+            if user:
+                self.client.force_login(user)
+            response = self.client.get(reverse("main:show_projects"))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "api/v1/projects/")
+            self.assertEqual(
+                'id="add-project-modal"' in response.content.decode(),
+                bool(user and user.is_superuser),
+            )
+
     def test_projects_page_keeps_title_query_in_search_box(self):
         response = self.client.get(reverse("main:show_projects"), {"title": "django"})
 
