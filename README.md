@@ -822,6 +822,72 @@ Karena kartu dan baris tabel dirakit dengan `createElement` dan `textContent`, f
 | Nama `Py<b>thon</b>` | Tersimpan sebagai `Python` |
 | Pengguna non-superuser memanggil `/skills/add-ajax/` langsung | 403 berupa JSON untuk `POST`, 405 untuk `GET` |
 
+### Catatan Implementasi Tutorial 7
+
+> Kerangka ini sengaja dikosongkan di bagian penjelasan. Isi dengan penjelasanmu sendiri, lalu hapus petunjuk dalam tanda `<!-- -->` dan baris `_(isi ...)_`.
+
+**1. Dari JSON manual ke Django REST Framework**
+
+<!-- Apa yang berubah dari get_projects_json / create_project_ajax (Tutorial 5) menjadi serializer, permission class, dan @api_view? -->
+
+_(isi catatanmu)_
+
+**2. Serializer dan validasi**
+
+<!-- Peran ProjectSerializer, tiga SerializerMethodField (star_count, is_starred, starred_by_names), dan validate_<field> dengan strip_tags. Apa bedanya request.data, .validated_data, dan .data? -->
+
+_(isi catatanmu)_
+
+**3. Autentikasi, otorisasi, dan CSRF**
+
+<!-- SessionAuthentication, IsPortfolioOwnerOrReadOnly, IsAuthenticated pada star, dan kenapa permission diperiksa sebelum objek dicari (403 vs 404). -->
+
+_(isi catatanmu)_
+
+**4. Kontrak API**
+
+| Method | Endpoint | Tindakan | Siapa yang boleh |
+| --- | --- | --- | --- |
+| GET | `/api/v1/projects/` | Daftar; `?title=` untuk mencari | Semua pengunjung |
+| POST | `/api/v1/projects/` | Tambah project | Pemilik (superuser) |
+| GET | `/api/v1/projects/<uuid>/` | Detail satu project | Semua pengunjung |
+| PUT / PATCH | `/api/v1/projects/<uuid>/` | Ubah project | Pemilik |
+| DELETE | `/api/v1/projects/<uuid>/` | Hapus project | Pemilik |
+| POST | `/api/v1/projects/<uuid>/star/` | Beri atau batalkan star | Pengguna login |
+
+<!-- Tambahkan penjelasan status 200 / 201 / 204 / 400 / 403 / 404 / 405 jika perlu. -->
+
+_(isi catatanmu)_
+
+**5. Halaman Projects memakai API baru**
+
+<!-- Perubahan kontrak data (item.pk dan item.fields menjadi item.id dan item.title), helper writeProject, event delegation, dan kenapa tag csrf_token tetap diperlukan. -->
+
+_(isi catatanmu)_
+
+**6. Pengujian**
+
+<!-- 13 test di main/tests_api.py, eksperimen melonggarkan permission, dan test CSRF dengan APIClient(enforce_csrf_checks=True). Apa bedanya dengan force_authenticate? -->
+
+_(isi catatanmu)_
+
+**7. Penyesuaian terhadap proyek saya**
+
+<!-- Contoh: tech_stack dan project_url pada tutorial menjadi category dan link; get_or_create untuk grup Editor karena migrasi 0009 sudah membuatnya; test lama di main/tests.py disesuaikan dengan kontrak baru. -->
+
+_(isi catatanmu)_
+
+**8. Skenario pengujian**
+
+| Skenario | Hasil yang diharapkan |
+| --- | --- |
+| Pengunjung membuka `/projects/` | _(isi)_ |
+| Pengguna biasa memberi lalu membatalkan star | _(isi)_ |
+| Superuser menambah project lewat modal | _(isi)_ |
+| Judul hanya berisi spasi atau tag HTML | _(isi)_ |
+| Pengguna biasa memanggil `DELETE /api/v1/projects/<uuid>/` | _(isi)_ |
+| `POST` ke API tanpa header `X-CSRFToken` | _(isi)_ |
+
 ---
 
 
