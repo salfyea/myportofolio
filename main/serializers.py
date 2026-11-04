@@ -50,8 +50,8 @@ class ProjectSerializer(serializers.ModelSerializer):
 
         return title
 
-    def validate_category(self, value):
-        return strip_tags(value).strip()
-
     def validate_description(self, value):
-        return strip_tags(value).strip()
+        return strip_tags(value)
+
+    def validate_category(self, value):
+        return strip_tags(value)
