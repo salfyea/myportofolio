@@ -142,6 +142,15 @@ class ProjectTest(TestCase):
         for element_id in ("loading", "error", "empty", "grid", "search-input"):
             self.assertContains(response, f'id="{element_id}"')
 
+    def test_projects_page_script_uses_drf_endpoints(self):
+        response = self.client.get(reverse("main:show_projects"))
+
+        self.assertContains(response, reverse("api:project-list"))
+        self.assertContains(response, "api/v1/projects/00000000-0000-0000-0000-000000000000/")
+        self.assertNotContains(response, reverse("main:get_projects_json"))
+        # The page must always set the csrftoken cookie for AJAX writes.
+        self.assertContains(response, "csrfmiddlewaretoken")
+
     def test_projects_page_keeps_title_query_in_search_box(self):
         response = self.client.get(reverse("main:show_projects"), {"title": "django"})
 
