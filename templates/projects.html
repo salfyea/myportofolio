@@ -383,9 +383,11 @@
                     isStar ? 'POST' : 'DELETE'
                 );
 
-                if (!isStar) {
-                    showToast('Berhasil', 'Project berhasil dihapus!', 'success');
-                }
+                showToast(
+                    'Berhasil',
+                    isStar ? 'Star berhasil diperbarui!' : 'Project berhasil dihapus!',
+                    'success'
+                );
 
                 fetchProjects(searchInput.value.trim());
             } catch (error) {
