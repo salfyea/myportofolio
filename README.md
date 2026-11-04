@@ -826,75 +826,39 @@ Karena kartu dan baris tabel dirakit dengan `createElement` dan `textContent`, f
 | Nama `Py<b>thon</b>` | Tersimpan sebagai `Python` |
 | Pengguna non-superuser memanggil `/skills/add-ajax/` langsung | 403 berupa JSON untuk `POST`, 405 untuk `GET` |
 
-### Catatan Implementasi Tutorial 6
-
-> Kerangka ini sengaja dikosongkan di bagian penjelasan; isi dengan penjelasanmu sendiri, lalu hapus petunjuk dalam tanda `<!-- -->` dan baris `_(isi ...)_`.
-
-**1. HTMX dibandingkan dengan AJAX dan `fetch` (Tutorial 5)**
-
-<!-- Server mengirim potongan HTML (fragment), bukan JSON yang dirakit ulang oleh JavaScript. Apa untung dan ruginya? -->
-
-_(isi catatanmu)_
-
-**2. Aplikasi `contacts` terpisah dari `main`**
-
-<!-- Kenapa dibuat app baru (namespace `contacts:`, template di `templates/contacts/`) dan bukan menimpa halaman Projects? -->
-
-_(isi catatanmu)_
-
-**3. Partial template dan atribut `hx-*`**
-
-| Atribut | Dipakai untuk | Contoh pada proyek |
-| --- | --- | --- |
-| `hx-post` | Tambah kontak | form tambah |
-| `hx-delete` | Hapus kontak | tombol Hapus dengan `hx-confirm` |
-| `hx-get` + `hx-trigger` | Cari kontak (debounce 300 ms) | kolom Cari |
-| `hx-get` / `hx-put` | Edit di dalam baris | tombol Edit, Simpan, Batal |
-| `hx-target` / `hx-swap` | Tempat dan cara pemasangan response | `#contact-rows`, `closest tr`, `outerHTML` |
-
-<!-- Jelaskan alur: event, request, fragment HTML, swap. -->
-
-_(isi catatanmu)_
-
-**4. Hal-hal yang perlu diperhatikan**
-
-<!-- Contoh: CSRF lewat hx-headers di body, DELETE harus mengembalikan 200 dengan isi kosong (bukan 204), dan request PUT dibaca dengan QueryDict(request.body). -->
-
-_(isi catatanmu)_
-
-**5. Latihan**
-
-<!-- Field `phone`, hx-swap="beforeend" dengan baris baru saja, dan pesan feedback lewat hx-swap-oob. Apa yang kamu pelajari dari masing-masing? -->
-
-_(isi catatanmu)_
-
-**6. Pengujian**
-
-<!-- 15 test di contacts/tests.py. Bagian apa yang diuji, dan apa yang belum teruji (misalnya perilaku di browser)? -->
-
-_(isi catatanmu)_
-
 ### Catatan Implementasi Tutorial 7
-
-> Kerangka ini sengaja dikosongkan di bagian penjelasan. Isi dengan penjelasanmu sendiri, lalu hapus petunjuk dalam tanda `<!-- -->` dan baris `_(isi ...)_`.
 
 **1. Dari JSON manual ke Django REST Framework**
 
-<!-- Apa yang berubah dari get_projects_json / create_project_ajax (Tutorial 5) menjadi serializer, permission class, dan @api_view? -->
+Pada Tutorial 5, `get_projects_json` menyusun dictionary satu per satu dan mengirimkannya dengan `JsonResponse`, sedangkan `create_project_ajax` memeriksa izin, memvalidasi form, dan memilih status HTTP di dalam satu fungsi. Pola itu berjalan, tetapi akan berulang setiap kali bagian lain (misalnya Skill) membutuhkan API. Pada Tutorial 7 tanggung jawab itu saya pisahkan: *serializer* mengurus representasi dan validasi data, *permission class* mengurus hak akses, `@api_view` menolak method yang salah, dan `Response` mengirim hasilnya.
 
-_(isi catatanmu)_
+| Tindakan | Sebelum Tutorial 7 | Tutorial 7 |
+| --- | --- | --- |
+| Melihat daftar project | `GET /api/projects/` | `GET /api/v1/projects/` |
+| Menambah project | `POST /projects/add-ajax/` | `POST /api/v1/projects/` |
+| Menghapus project | `POST /projects/<uuid>/delete/` | `DELETE /api/v1/projects/<uuid>/` |
+
+Jalur lama tidak saya hapus. `get_projects_json`, `create_project_ajax`, `create_project`, `update_project`, `delete_project`, dan `toggle_star` masih ada, begitu pula halaman edit untuk Editor. Yang berpindah ke API baru hanya halaman Projects.
 
 **2. Serializer dan validasi**
 
-<!-- Peran ProjectSerializer, tiga SerializerMethodField (star_count, is_starred, starred_by_names), dan validate_<field> dengan strip_tags. Apa bedanya request.data, .validated_data, dan .data? -->
+`ProjectSerializer` (di `main/serializers.py`) adalah `ModelSerializer` dengan daftar `fields` yang ditulis eksplisit, sehingga password atau email pengguna tidak mungkin ikut terkirim. Field `id` bersifat *read-only*. Tiga field hasil perhitungan, yaitu `star_count`, `is_starred`, dan `starred_by_names`, memakai `SerializerMethodField`, sehingga otomatis hanya dapat dibaca. `is_starred` dihitung dari `request` yang dibawa lewat `context`, dan bernilai `False` jika tidak ada request atau pengunjung belum login. Itu alasan view selalu mengirim `context={"request": request}`.
 
-_(isi catatanmu)_
+Validasi memakai method `validate_<field>`: `validate_title` membuang tag dengan `strip_tags`, lalu menolak judul yang menjadi kosong; `validate_description` dan `validate_category` membuang tag. `URLField` dari model tetap menolak `javascript:alert(1)`. Aturan ini harus ada di serializer karena `ProjectSerializer` tidak menjalankan `ProjectForm.clean_title`: input lewat API memakai jalur validasi yang berbeda dari form.
+
+Tiga bentuk data yang sering tertukar:
+
+- `request.data` adalah input mentah dari klien dan belum boleh dipercaya.
+- `.validated_data` adalah input yang lolos `is_valid()` dan sudah dibersihkan; field read-only diabaikan.
+- `.data` adalah representasi untuk klien (termasuk `id` dan field hasil perhitungan), dibaca setelah `.save()`.
 
 **3. Autentikasi, otorisasi, dan CSRF**
 
-<!-- SessionAuthentication, IsPortfolioOwnerOrReadOnly, IsAuthenticated pada star, dan kenapa permission diperiksa sebelum objek dicari (403 vs 404). -->
+Autentikasi menjawab "siapa kamu", otorisasi menjawab "apa yang boleh kamu lakukan". Di DRF keduanya terpisah: `SessionAuthentication` mengisi `request.user` dari session login yang sudah ada, lalu permission class memutuskan apakah request diteruskan. `IsPortfolioOwnerOrReadOnly` mengizinkan method aman (`GET`, `HEAD`, `OPTIONS`) untuk semua orang dan method lain hanya untuk `is_superuser`. Saya tidak memakai `IsAuthenticatedOrReadOnly` karena semua akun login akan boleh menulis, dan tidak memakai `IsAdminUser` karena permission itu memeriksa `is_staff`, bukan `is_superuser` seperti aturan portofolio ini. Endpoint star memakai `IsAuthenticated`, dan akun pemberi star selalu diambil dari `request.user`, bukan dari input klien.
 
-_(isi catatanmu)_
+Urutan satu request: routing, autentikasi, permission, pemeriksaan method, isi view, serializer, lalu response. Karena permission diperiksa sebelum objek dicari, pengguna biasa yang mengubah project yang tidak ada mendapat **403**, bukan 404. Pada `SessionAuthentication`, pengunjung anonim yang menulis data juga mendapat 403, bukan 401. Untuk `POST`, `PUT`, `PATCH`, dan `DELETE` dari akun yang login lewat session, token CSRF tetap wajib dikirim lewat header `X-CSRFToken`, dan saya tidak memakai `@csrf_exempt`.
+
+Kelas `IsPortfolioOwnerOrEditorOrReadOnly` (superuser boleh semua, anggota grup Editor hanya `PUT` dan `PATCH`) sudah ada di `main/permissions.py` tetapi sengaja tidak dipasang pada endpoint Projects, sesuai tutorial. Kelas itu disiapkan untuk bagian portofolio yang diminta pada tugas berikutnya.
 
 **4. Kontrak API**
 
@@ -907,38 +871,37 @@ _(isi catatanmu)_
 | DELETE | `/api/v1/projects/<uuid>/` | Hapus project | Pemilik |
 | POST | `/api/v1/projects/<uuid>/star/` | Beri atau batalkan star | Pengguna login |
 
-<!-- Tambahkan penjelasan status 200 / 201 / 204 / 400 / 403 / 404 / 405 jika perlu. -->
-
-_(isi catatanmu)_
+Status yang dikembalikan: **200** untuk baca dan ubah, **201** setelah membuat, **204** (tanpa isi) setelah menghapus, **400** beserta error per field untuk input tidak valid, **403** untuk tindakan yang tidak diizinkan, **404** jika UUID tidak ditemukan, dan **405** untuk method yang salah. `PUT` menuntut semua field wajib, sedangkan `PATCH` memakai `partial=True` sehingga field yang tidak dikirim tetap seperti semula. Pencarian kosong mengembalikan `[]` dengan status 200, bukan 404, karena daftar kosong adalah hasil yang sah.
 
 **5. Halaman Projects memakai API baru**
 
-<!-- Perubahan kontrak data (item.pk dan item.fields menjadi item.id dan item.title), helper writeProject, event delegation, dan kenapa tag csrf_token tetap diperlukan. -->
+JSON sekarang datar (`item.id`, `item.title`, `item.category`, `item.link`), bukan `item.pk` dan `item.fields`, dan `starred_by_names` berupa string, bukan list. Semua permintaan tulis melewati satu helper, `writeProject(url, method, payload)`, yang mengirim JSON, header `X-CSRFToken` dari `getCookie('csrftoken')`, dan membaca error serializer lewat `apiErrorMessage`; status 204 menghasilkan `null` sehingga `.json()` tidak dipanggil pada body kosong. Tombol star dan hapus memakai *event delegation* pada `#grid`, sehingga tetap bekerja setelah daftar dirender ulang. Tag `{% csrf_token %}` saya taruh di luar `<script>` agar cookie `csrftoken` selalu dibuat, termasuk untuk pengguna biasa yang hanya memberi star.
 
-_(isi catatanmu)_
+Tampilan Tutorial 5 saya pertahankan: kartu tetap dirakit dengan `createElement` dan `textContent` (bukan `innerHTML`), sehingga fungsi `escapeHtml` tidak diperlukan; modal hapus dan debounce 300 ms tetap ada; tautan Edit untuk Editor masih menuju halaman edit lama. URL gambar dan tautan hanya ditampilkan jika berskema `http` atau `https`, untuk data lama yang tersimpan sebelum serializer memvalidasinya.
 
 **6. Pengujian**
 
-<!-- 13 test di main/tests_api.py, eksperimen melonggarkan permission, dan test CSRF dengan APIClient(enforce_csrf_checks=True). Apa bedanya dengan force_authenticate? -->
+`main/tests_api.py` berisi 13 test `APITestCase` dari tutorial: daftar dan detail publik, pencarian, 404, penolakan tulis bagi tamu dan pengguna biasa (dengan memeriksa isi database, bukan hanya status), pembuatan oleh pemilik, validasi, `PATCH`/`PUT`/`DELETE`, star, field hasil perhitungan yang tidak bisa dipalsukan, *staff* dan Editor yang tidak boleh mengelola Projects, method yang salah, serta dua test CSRF. Hasilnya `Ran 13 tests ... OK`, dan `python manage.py test main` (43 test) juga lulus.
 
-_(isi catatanmu)_
+Dua test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` karena `force_authenticate` memilih pengguna langsung tanpa melewati proses login maupun CSRF, sehingga tidak bisa membuktikan perlindungan CSRF berjalan. Saya juga mencoba eksperimen dari tutorial: ketika permission saya longgarkan menjadi selalu `True`, `test_guest_and_visitor_cannot_write` gagal dengan `201 != 403`; setelah dikembalikan, semua test lulus lagi.
 
 **7. Penyesuaian terhadap proyek saya**
 
-<!-- Contoh: tech_stack dan project_url pada tutorial menjadi category dan link; get_or_create untuk grup Editor karena migrasi 0009 sudah membuatnya; test lama di main/tests.py disesuaikan dengan kontrak baru. -->
-
-_(isi catatanmu)_
+- Field contoh tutorial `tech_stack` dan `project_url` saya ganti menjadi `category` dan `link` sesuai model `Project` milik saya.
+- Pada `test_staff_and_editor_cannot_manage_tutorial_projects`, `Group.objects.create(name="Editor")` saya ganti dengan `get_or_create`, karena migrasi `0009_create_editor_group` sudah membuat grup Editor di database test. Isi pemeriksaannya tidak berubah.
+- Test lama di `main/tests.py` (`ProjectTest`) saya perbarui sesuai kontrak yang memang berubah sejak Tutorial 4 dan 5 (tambah dan hapus butuh login, bentuk JSON `pk` dan `fields`, halaman Projects hanya kerangka), lalu saya tambah test untuk peran dan izin. Tutorial menyatakan test lama boleh disesuaikan, selama tidak dihapus hanya agar lulus.
+- Aplikasi `contacts` dari Tutorial 6 berdiri sendiri dan tidak dipakai oleh Tutorial 7.
 
 **8. Skenario pengujian**
 
 | Skenario | Hasil yang diharapkan |
 | --- | --- |
-| Pengunjung membuka `/projects/` | _(isi)_ |
-| Pengguna biasa memberi lalu membatalkan star | _(isi)_ |
-| Superuser menambah project lewat modal | _(isi)_ |
-| Judul hanya berisi spasi atau tag HTML | _(isi)_ |
-| Pengguna biasa memanggil `DELETE /api/v1/projects/<uuid>/` | _(isi)_ |
-| `POST` ke API tanpa header `X-CSRFToken` | _(isi)_ |
+| Pengunjung membuka `/projects/` | Daftar tampil lewat `GET /api/v1/projects/`, tanpa tombol tambah dan hapus, tombol star berupa tautan ke login |
+| Pengguna biasa memberi lalu membatalkan star | `POST` berstatus 200; jumlah star bertambah lalu kembali, `is_starred` berganti |
+| Superuser menambah project lewat modal | `POST` berstatus 201 dengan `X-CSRFToken`, modal tertutup, toast, daftar dimuat ulang tanpa reload |
+| Judul hanya berisi spasi atau tag HTML | 400 dengan pesan dari serializer, ditampilkan lewat toast |
+| Pengguna biasa memanggil `DELETE /api/v1/projects/<uuid>/` | 403 dan data di database tidak berubah |
+| `POST` ke API tanpa header `X-CSRFToken` (session login) | 403 |
 
 ---
 
