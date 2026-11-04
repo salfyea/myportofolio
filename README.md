@@ -96,7 +96,7 @@ Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
 | **Tugas 4** | Penerapan pola autentikasi dan otorisasi pada bagian `Skill`: penambahan peran **Editor** melalui Django Group, pembatasan hak akses sisi server untuk empat peran, penyembunyian kontrol aksi pada template sesuai peran, fitur star pada `Skill`, serta penggantian proteksi kode rahasia dengan sistem otorisasi Django. |
 | **Tutorial 5** | Penerapan JavaScript dan AJAX pada halaman Projects: komponen notifikasi toast, pemuatan data proyek lewat Fetch API dengan JSON yang dirakit manual (termasuk jumlah dan status star), state loading, kosong, dan error, pencarian dengan debouncing, modal form tambah proyek, pengiriman form lewat AJAX dengan token CSRF, serta perlindungan XSS di sisi tampilan dan server. |
 | **Tugas 5** | Penerapan seluruh pola Tutorial 5 pada bagian `Skill`: tabel skill dimuat lewat AJAX beserta jumlah dan status star, pencarian berdasarkan nama dengan debouncing, tambah skill lewat modal dan `fetch` dengan respons 201, 400, dan 403, toast untuk keberhasilan maupun kegagalan, pembersihan input dengan `strip_tags`, serta pemindahan `getCookie` ke berkas JavaScript bersama. |
-| **Tutorial 6** | Latihan HTMX (tidak wajib) pada app terpisah `contacts`: model `Contact`, partial template, tambah, hapus, pencarian langsung dengan debouncing, dan edit di dalam baris tabel memakai atribut `hx-*`, ditambah tiga latihan (field `phone`, `hx-swap="beforeend"`, dan feedback lewat `hx-swap-oob`). |
+| **Tutorial 6** | Latihan HTMX pada app terpisah `contacts`: model `Contact`, partial template, tambah, hapus, pencarian langsung dengan debouncing, dan edit di dalam baris tabel memakai atribut `hx-*`, ditambah tiga latihan (field `phone`, `hx-swap="beforeend"`, dan feedback lewat `hx-swap-oob`). |
 | **Tutorial 7** | Implementasi Django REST Framework pada `Project`: `ProjectSerializer` dengan validasi dan field star hasil perhitungan, permission class `IsPortfolioOwnerOrReadOnly` dan `IsPortfolioOwnerOrEditorOrReadOnly`, API view berbasis fungsi di bawah `/api/v1/`, endpoint star, halaman Projects yang memakai API baru, serta 13 test dengan `APITestCase` termasuk pemeriksaan CSRF. |
 | **Tugas berikutnya** | Akan ditambahkan pada bagian ini beserta perubahan fitur, konsep yang dipelajari, dan catatan implementasinya. |
 
@@ -828,7 +828,7 @@ Karena kartu dan baris tabel dirakit dengan `createElement` dan `textContent`, f
 
 ### Catatan Implementasi Tutorial 6
 
-> Tutorial 6 bersifat latihan dan tidak wajib. Kerangka ini sengaja dikosongkan di bagian penjelasan; isi dengan penjelasanmu sendiri, lalu hapus petunjuk dalam tanda `<!-- -->` dan baris `_(isi ...)_`.
+> Kerangka ini sengaja dikosongkan di bagian penjelasan; isi dengan penjelasanmu sendiri, lalu hapus petunjuk dalam tanda `<!-- -->` dan baris `_(isi ...)_`.
 
 **1. HTMX dibandingkan dengan AJAX dan `fetch` (Tutorial 5)**
 
