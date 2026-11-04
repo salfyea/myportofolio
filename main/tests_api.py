@@ -18,6 +18,7 @@ class ProjectAPITest(APITestCase):
             title="Portfolio", description="My website", category="Web Development",
         )
         self.list_url = reverse("api:project-list")
+        self.detail_url = reverse("api:project-detail", args=[self.project.id])
         self.payload = {
             "title": "New project", "description": "A useful app", "category": "Backend",
             "link": "https://example.com/", "project_image_url": "",
@@ -30,6 +31,7 @@ class ProjectAPITest(APITestCase):
         self.assertEqual(response.data[0]["id"], str(self.project.id))
         self.assertFalse(response.data[0]["is_starred"])
         self.assertNotIn("fields", response.data[0])
+        self.assertEqual(self.client.get(self.detail_url).status_code, status.HTTP_200_OK)
 
     def test_search_and_empty_results(self):
         response = self.client.get(self.list_url, {"title": "PORT"})
@@ -77,3 +79,59 @@ class ProjectAPITest(APITestCase):
 
         self.assertEqual(response.data["description"], "Bold text")
         self.assertEqual(response.data["category"], "Web")
+
+    def test_missing_project(self):
+        url = reverse("api:project-detail", args=[uuid.uuid4()])
+
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_guest_and_visitor_cannot_update_or_delete(self):
+        for user in (None, self.visitor):
+            self.client.force_authenticate(user=user)
+            response = self.client.patch(self.detail_url, {"title": "Changed"}, format="json")
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            response = self.client.delete(self.detail_url)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Portfolio")
+
+    def test_visitor_gets_403_before_404_for_missing_project(self):
+        self.client.force_authenticate(user=self.visitor)
+        url = reverse("api:project-detail", args=[uuid.uuid4()])
+
+        self.assertEqual(self.client.delete(url).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_owner_patch_changes_only_given_fields(self):
+        self.client.force_authenticate(user=self.owner)
+
+        response = self.client.patch(self.detail_url, {"title": "Updated"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Updated")
+        self.assertEqual(self.project.description, "My website")
+
+    def test_owner_put_requires_all_required_fields(self):
+        self.client.force_authenticate(user=self.owner)
+
+        response = self.client.put(self.detail_url, {"title": "Only title"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("description", response.data)
+
+    def test_owner_put_replaces_project(self):
+        self.client.force_authenticate(user=self.owner)
+
+        response = self.client.put(self.detail_url, self.payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "New project")
+
+    def test_owner_delete_returns_204_then_404(self):
+        self.client.force_authenticate(user=self.owner)
+
+        response = self.client.delete(self.detail_url)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(self.client.get(self.detail_url).status_code, status.HTTP_404_NOT_FOUND)
