@@ -826,6 +826,61 @@ Karena kartu dan baris tabel dirakit dengan `createElement` dan `textContent`, f
 | Nama `Py<b>thon</b>` | Tersimpan sebagai `Python` |
 | Pengguna non-superuser memanggil `/skills/add-ajax/` langsung | 403 berupa JSON untuk `POST`, 405 untuk `GET` |
 
+### Catatan Implementasi Tutorial 6
+
+**1. HTMX dibandingkan dengan AJAX dan `fetch` (Tutorial 5)**
+
+Pada Tutorial 5, server mengirim JSON lalu JavaScript yang merakit tampilannya dengan `createElement`. Pada HTMX, arahnya dibalik: server mengirim potongan HTML (*fragment*), dan HTMX langsung memasangnya ke bagian halaman yang dituju. Alurnya selalu sama: **event dari pengguna, request lewat atribut `hx-*`, view Django mengembalikan fragment HTML, lalu HTMX melakukan *swap* ke target**. Keuntungannya, hampir tidak ada JavaScript yang perlu saya tulis dan tampilan tetap dirender oleh template Django. Kekurangannya, server dan template terikat pada bentuk HTML tertentu, dan datanya tidak berbentuk JSON sehingga tidak bisa dipakai klien lain seperti API.
+
+**2. Aplikasi `contacts` terpisah dari `main`**
+
+Tutorial memakai app bernama `main`, padahal proyek ini sudah memilikinya. Mengikuti tip di tutorial, saya membuat app baru `contacts` dengan namespace URL `contacts:`, prefix `/contacts/`, dan template di `templates/contacts/` agar tidak bentrok dengan `index.html` milik `main`. Halaman Projects dari Tutorial 5 tidak saya ubah. Aplikasi ini punya model `Contact` (`name`, `email`, lalu `phone` dari latihan) dan dua migrasi, `0001_initial` dan `0002_contact_phone`, sehingga `python manage.py migrate` perlu dijalankan di database lokal.
+
+**3. Partial template dan atribut `hx-*`**
+
+Potongan HTML yang dikirim ke HTMX saya simpan sebagai *partial template*: `_contact_row.html` (satu baris), `_contact_rows.html` (semua baris, dengan pesan kosong), `_contact_edit_row.html` (baris berbentuk form), dan `_contact_added.html` (baris baru beserta pembaruan tambahan, lihat poin 5). Halaman utamanya, `index.html`, memuat HTMX dari CDN dan menyertakan token CSRF di `hx-headers` pada `<body>`, sehingga setiap `POST`, `PUT`, dan `DELETE` dari elemen di dalamnya membawa `X-CSRFToken`.
+
+| Fitur | Atribut utama | Response view | Swap |
+| --- | --- | --- | --- |
+| Tambah | `hx-post`, `hx-target="#contact-rows"` | baris kontak baru | `beforeend` |
+| Cari | `hx-get`, `hx-trigger="keyup changed delay:300ms, search"` | baris hasil filter | `innerHTML` |
+| Edit | `hx-get` pada tombol Edit | baris berbentuk form | `outerHTML` pada `closest tr` |
+| Simpan | `hx-put` pada form | baris tampilan | `outerHTML` |
+| Batal | `hx-get` ke `contact_row` | baris tampilan | `outerHTML` |
+| Hapus | `hx-delete`, `hx-confirm` | string kosong | `outerHTML` pada `closest tr` |
+
+**4. Hal-hal yang perlu diperhatikan**
+
+- **Hapus harus membalas 200 dengan isi kosong, bukan 204.** HTMX tidak melakukan *swap* untuk response 204, sehingga barisnya tidak akan hilang dari tabel.
+- **Request `PUT` tidak mengisi `request.POST`.** Datanya ada di `request.body` sebagai string mentah, jadi `contact_update` membacanya dengan `QueryDict(request.body)`.
+- **`<form>` tidak boleh membungkus `<td>`.** Pada baris edit, setiap input berada di selnya sendiri dan menunjuk form di sel terakhir lewat atribut `form="edit-form-<id>"`.
+- **Debounce cukup ditulis di atribut.** `delay:300ms` pada `hx-trigger` menggantikan `setTimeout` dan `clearTimeout` yang saya tulis manual pada Tutorial 5.
+- **Pencarian memakai `name="q"`**, sehingga HTMX otomatis mengirim `GET /contacts/search/?q=...`, dan filter `name__icontains` tidak membedakan huruf besar dan kecil.
+
+**5. Latihan**
+
+- **Field `phone`:** ditambahkan ke model (`CharField`, `blank=True`) dan ke form tambah, tampilan baris, form edit, serta view tambah dan update. Kolom `colspan` pada pesan kosong ikut disesuaikan menjadi 4.
+- **`hx-swap="beforeend"`:** view tambah hanya mengembalikan baris baru, bukan seluruh daftar, lalu baris itu disisipkan di akhir tabel. Akibatnya baris "Tidak ada kontak." tidak ikut terganti, jadi response juga menyertakan `<tr id="contacts-empty" hx-swap-oob="delete">` untuk menghapus baris tersebut saat kontak pertama ditambahkan.
+- **Feedback lewat `hx-swap-oob`:** satu elemen hanya bisa punya satu `hx-target`, jadi response yang sama juga menyertakan `<div id="feedback" hx-swap-oob="true">Kontak berhasil ditambahkan!</div>` untuk memperbarui `#feedback` di halaman.
+
+**6. Pengujian dan keterbatasan**
+
+Ada 15 test di `contacts/tests.py` yang memeriksa sisi server: halaman daftar dan pesan kosong, tambah (termasuk bahwa yang dikembalikan hanya baris baru), hapus (200 dengan isi kosong, 405 untuk method lain, 404 untuk id yang tidak ada), pencarian (tanpa membedakan huruf besar dan kecil, query kosong, tidak ada hasil), serta edit dan update lewat `PUT`. Perilaku HTMX di browser (swap, konfirmasi hapus, indikator pencarian) tidak tercakup oleh test tersebut dan perlu dicoba langsung.
+
+Keterbatasan yang saya sadari: mengikuti tutorial, `contact_add` dan `contact_update` menyimpan input tanpa validasi di server (email hanya dibatasi oleh `type="email"` dan `required` di browser), dan tidak ada pembatasan siapa yang boleh menambah, mengubah, atau menghapus kontak. Template Django tetap melakukan *auto-escaping*, sehingga input berisi tag HTML tampil sebagai teks. Karena Tutorial 6 hanya latihan, kedua hal itu tidak saya tambahkan.
+
+**7. Skenario pengujian**
+
+| Skenario | Hasil yang diharapkan |
+| --- | --- |
+| Membuka `/contacts/` saat belum ada kontak | Tabel berisi baris "Tidak ada kontak." |
+| Menambah kontak lewat form | `POST` berstatus 200, baris baru muncul di akhir tabel tanpa reload, baris "Tidak ada kontak." hilang, pesan feedback tampil, dan form dikosongkan |
+| Mengetik di kolom Cari | Satu request setelah berhenti mengetik 300 ms, tabel terfilter |
+| Menekan Edit, lalu Batal | Baris berubah menjadi form, lalu kembali menjadi baris tampilan tanpa menyimpan apa pun |
+| Menekan Edit, mengubah data, lalu Simpan | `PUT` berstatus 200, baris tampilan menampilkan nilai baru |
+| Menekan Hapus lalu OK pada konfirmasi | `DELETE` berstatus 200 dengan isi kosong, baris hilang |
+| Memanggil `/contacts/<id>/delete/` dengan `POST` | 405 dan data tidak terhapus |
+
 ### Catatan Implementasi Tutorial 7
 
 **1. Dari JSON manual ke Django REST Framework**
