@@ -71,17 +71,23 @@
     {% include "components/skill_form_modal.html" %}
 {% endif %}
 
+{% if user.is_superuser or is_editor %}
+    {% include "components/skill_edit_modal.html" %}
+{% endif %}
+
+{# Guarantees the csrftoken cookie exists for regular users who only star. #}
+{% csrf_token %}
+
 <script>
     (function () {
         const SKILL_ID_PLACEHOLDER = '00000000-0000-0000-0000-000000000000';
 
-        const skillsApiUrl = "{% url 'main:get_skills_json' %}";
-        const updateUrlTemplate = "{% url 'main:update_skill' '00000000-0000-0000-0000-000000000000' %}";
-        const deleteUrlTemplate = "{% url 'main:delete_skill' '00000000-0000-0000-0000-000000000000' %}";
+        const SKILLS_ENDPOINT = "{% url 'api:skill-list' %}";
+        const detailUrlTemplate = "{% url 'api:skill-detail' '00000000-0000-0000-0000-000000000000' %}";
+        const starUrlTemplate = "{% url 'api:skill-star' '00000000-0000-0000-0000-000000000000' %}";
+        const LOGIN_URL = "{% url 'main:login' %}";
 
-        const CREATE_SKILL_ENDPOINT = "{% url 'main:create_skill_ajax' %}";
-
-        const csrfToken = '{{ csrf_token }}';
+        const isAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
         const canEdit = {% if user.is_superuser or is_editor %}true{% else %}false{% endif %};
         const canDelete = {% if user.is_superuser %}true{% else %}false{% endif %};
 
@@ -93,8 +99,10 @@
         const emptyMessage = document.getElementById('empty-message');
         const skillsBody = document.getElementById('skills-body');
         const skillForm = document.getElementById('skill-form');
+        const editForm = document.getElementById('edit-skill-form');
 
         let currentController = null;
+        let editingSkillId = null;
 
         function buildUrl(template, skillId) {
             return template.replace(SKILL_ID_PLACEHOLDER, skillId);
@@ -114,14 +122,6 @@
             return element;
         }
 
-        function createCsrfInput() {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'csrfmiddlewaretoken';
-            input.value = csrfToken;
-            return input;
-        }
-
         // Show exactly one of the loading / error / empty / table containers.
         function displayPageSection(sectionId) {
             sectionIds.forEach(function (id) {
@@ -129,8 +129,89 @@
             });
         }
 
+        // DRF answers 400 with {field: [messages]} and 403 with {detail: message}.
+        function apiErrorMessage(data, status) {
+            const messages = Object.values(data)
+                .flat()
+                .filter(value => typeof value === 'string');
+
+            return messages.join(' ') || 'Terjadi kesalahan (status ' + status + ').';
+        }
+
+        // Single entry point for every request that changes data.
+        async function writeSkill(url, method, payload) {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: payload === undefined ? undefined : JSON.stringify(payload),
+            });
+
+            // 204 has no body, so calling .json() would throw.
+            if (response.status === 204) {
+                return null;
+            }
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(apiErrorMessage(data, response.status));
+            }
+
+            return data;
+        }
+
+        function formPayload(form) {
+            const payload = {};
+
+            new FormData(form).forEach(function (value, key) {
+                if (key !== 'csrfmiddlewaretoken') {
+                    payload[key] = value;
+                }
+            });
+
+            return payload;
+        }
+
+        function reportError(error) {
+            // fetch() rejects with a TypeError when the server is unreachable.
+            const message = error instanceof TypeError
+                ? 'Tidak dapat terhubung ke server. Silakan coba lagi.'
+                : error.message;
+
+            showToast('Gagal', message, 'error');
+        }
+
+        function buildStarControl(skill) {
+            const label = (skill.is_starred ? '★ ' : '☆ ') + skill.star_count;
+            const className = skill.is_starred ? 'star-button star-button--active' : 'star-button';
+
+            if (!isAuthenticated) {
+                const loginLink = createElement('a', 'star-button', label);
+                loginLink.href = LOGIN_URL;
+                loginLink.setAttribute('aria-label', 'Login untuk memberi star ' + skill.name);
+                return loginLink;
+            }
+
+            const button = createElement('button', className, label);
+            button.type = 'button';
+            button.dataset.action = 'star';
+            button.dataset.id = skill.id;
+            button.setAttribute('aria-pressed', String(skill.is_starred));
+            button.setAttribute('aria-label', (skill.is_starred ? 'Batalkan star ' : 'Beri star ') + skill.name);
+
+            if (skill.starred_by_names) {
+                button.title = 'Diberi star oleh: ' + skill.starred_by_names;
+            }
+
+            return button;
+        }
+
         function buildDeleteControls(skill) {
-            const modalId = 'delete-skill-' + skill.pk;
+            const modalId = 'delete-skill-' + skill.id;
             const fragment = document.createDocumentFragment();
 
             const openButton = createElement('button', 'button button-danger', 'Hapus');
@@ -153,14 +234,9 @@
             content.appendChild(createElement('h2', '', 'Hapus Skill?'));
 
             const question = createElement('p', '', 'Apakah kamu yakin ingin menghapus ');
-            question.appendChild(createElement('strong', '', skill.fields.name));
+            question.appendChild(createElement('strong', '', skill.name));
             question.appendChild(document.createTextNode('?'));
             content.appendChild(question);
-
-            const form = document.createElement('form');
-            form.method = 'post';
-            form.action = buildUrl(deleteUrlTemplate, skill.pk);
-            form.appendChild(createCsrfInput());
 
             const actions = createElement('div', 'delete-modal__actions');
 
@@ -171,11 +247,12 @@
             actions.appendChild(cancelButton);
 
             const confirmButton = createElement('button', 'button button-danger', 'Ya, Hapus');
-            confirmButton.type = 'submit';
+            confirmButton.type = 'button';
+            confirmButton.dataset.action = 'delete';
+            confirmButton.dataset.id = skill.id;
             actions.appendChild(confirmButton);
 
-            form.appendChild(actions);
-            content.appendChild(form);
+            content.appendChild(actions);
             modal.appendChild(content);
             fragment.appendChild(modal);
 
@@ -183,29 +260,25 @@
         }
 
         function buildSkillRowElement(skill) {
-            const fields = skill.fields;
-
             const row = document.createElement('tr');
-            row.id = 'skill-' + skill.pk;
+            row.id = 'skill-' + skill.id;
+            row.dataset.skill = JSON.stringify(skill);
 
-            row.appendChild(createElement('td', '', fields.name));
-            row.appendChild(createElement('td', '', fields.category));
+            row.appendChild(createElement('td', '', skill.name));
+            row.appendChild(createElement('td', '', skill.category));
 
-            // Read-only star count; toggling still happens on the landing page.
             const starCell = document.createElement('td');
-            starCell.appendChild(createElement(
-                'span',
-                fields.is_starred ? 'star-button star-button--active' : 'star-button',
-                (fields.is_starred ? '★ ' : '☆ ') + fields.star_count
-            ));
+            starCell.appendChild(buildStarControl(skill));
             row.appendChild(starCell);
 
             const actionsCell = createElement('td', 'skills-table__actions');
 
             if (canEdit) {
-                const editLink = createElement('a', 'button button-secondary', 'Edit');
-                editLink.href = buildUrl(updateUrlTemplate, skill.pk);
-                actionsCell.appendChild(editLink);
+                const editButton = createElement('button', 'button button-secondary', 'Edit');
+                editButton.type = 'button';
+                editButton.dataset.action = 'edit';
+                editButton.dataset.id = skill.id;
+                actionsCell.appendChild(editButton);
             }
 
             if (canDelete) {
@@ -228,13 +301,16 @@
 
             displayPageSection('loading');
 
-            const url = new URL(skillsApiUrl, window.location.origin);
+            const url = new URL(SKILLS_ENDPOINT, window.location.origin);
             if (name) {
                 url.searchParams.set('name', name);
             }
 
             try {
-                const response = await fetch(url, { signal: controller.signal });
+                const response = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    signal: controller.signal,
+                });
 
                 if (!response.ok) {
                     throw new Error('Request failed with status ' + response.status);
@@ -277,36 +353,94 @@
             submitButton.disabled = true;
 
             try {
-                const response = await fetch(CREATE_SKILL_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                    body: new FormData(skillForm),
-                });
-                const result = await response.json().catch(() => ({}));
-
-                if (response.ok) {
-                    skillForm.reset();
-                    document.getElementById('add-skill-modal').hidePopover();
-                    showToast('Berhasil', 'Skill baru berhasil ditambahkan!', 'success');
-                    searchSkills();
-                    return;
-                }
-
-                const messages = result.errors
-                    ? Object.values(result.errors).flat().map(error => error.message)
-                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
-
-                showToast('Gagal', messages.join(' '), 'error');
+                await writeSkill(SKILLS_ENDPOINT, 'POST', formPayload(skillForm));
+                skillForm.reset();
+                document.getElementById('add-skill-modal').hidePopover();
+                showToast('Berhasil', 'Skill baru berhasil ditambahkan!', 'success');
+                searchSkills();
             } catch (error) {
-                console.error(error);
-                showToast('Gagal', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+                reportError(error);
             } finally {
                 submitButton.disabled = false;
             }
         }
 
+        function openEditModal(skill) {
+            editingSkillId = skill.id;
+            editForm.elements.name.value = skill.name;
+            editForm.elements.icon_url.value = skill.icon_url;
+            editForm.elements.category.value = skill.category;
+            document.getElementById('edit-skill-modal').showPopover();
+        }
+
+        async function saveSkill(event) {
+            event.preventDefault();
+
+            const submitButton = editForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            try {
+                // PATCH sends only the edited fields; star data stays server-side.
+                await writeSkill(buildUrl(detailUrlTemplate, editingSkillId), 'PATCH', formPayload(editForm));
+                document.getElementById('edit-skill-modal').hidePopover();
+                showToast('Berhasil', 'Skill berhasil diperbarui!', 'success');
+                searchSkills();
+            } catch (error) {
+                reportError(error);
+            } finally {
+                submitButton.disabled = false;
+            }
+        }
+
+        async function toggleStar(button) {
+            button.disabled = true;
+
+            try {
+                const skill = await writeSkill(buildUrl(starUrlTemplate, button.dataset.id), 'POST');
+                // Only this row changes, so the rest of the table stays put.
+                document.getElementById('skill-' + skill.id).replaceWith(buildSkillRowElement(skill));
+            } catch (error) {
+                button.disabled = false;
+                reportError(error);
+            }
+        }
+
+        async function deleteSkill(button) {
+            button.disabled = true;
+
+            try {
+                await writeSkill(buildUrl(detailUrlTemplate, button.dataset.id), 'DELETE');
+                showToast('Berhasil', 'Skill berhasil dihapus!', 'success');
+                searchSkills();
+            } catch (error) {
+                button.disabled = false;
+                reportError(error);
+            }
+        }
+
+        // One listener on the table body keeps working after rows are re-rendered.
+        skillsBody.addEventListener('click', function (event) {
+            const button = event.target.closest('button[data-action]');
+
+            if (!button) {
+                return;
+            }
+
+            if (button.dataset.action === 'star') {
+                toggleStar(button);
+            } else if (button.dataset.action === 'delete') {
+                deleteSkill(button);
+            } else if (button.dataset.action === 'edit') {
+                openEditModal(JSON.parse(button.closest('tr').dataset.skill));
+            }
+        });
+
         if (skillForm) {
             skillForm.addEventListener('submit', addSkill);
+        }
+
+        if (editForm) {
+            editForm.addEventListener('submit', saveSkill);
         }
 
         // Wait until the user stops typing before sending a request.
