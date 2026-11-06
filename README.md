@@ -98,7 +98,7 @@ Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
 | **Tugas 5** | Penerapan seluruh pola Tutorial 5 pada bagian `Skill`: tabel skill dimuat lewat AJAX beserta jumlah dan status star, pencarian berdasarkan nama dengan debouncing, tambah skill lewat modal dan `fetch` dengan respons 201, 400, dan 403, toast untuk keberhasilan maupun kegagalan, pembersihan input dengan `strip_tags`, serta pemindahan `getCookie` ke berkas JavaScript bersama. |
 | **Tutorial 6** | Latihan HTMX pada app terpisah `contacts`: model `Contact`, partial template, tambah, hapus, pencarian langsung dengan debouncing, dan edit di dalam baris tabel memakai atribut `hx-*`, ditambah tiga latihan (field `phone`, `hx-swap="beforeend"`, dan feedback lewat `hx-swap-oob`). |
 | **Tutorial 7** | Implementasi Django REST Framework pada `Project`: `ProjectSerializer` dengan validasi dan field star hasil perhitungan, permission class `IsPortfolioOwnerOrReadOnly` dan `IsPortfolioOwnerOrEditorOrReadOnly`, API view berbasis fungsi di bawah `/api/v1/`, endpoint star, halaman Projects yang memakai API baru, serta 13 test dengan `APITestCase` termasuk pemeriksaan CSRF. |
-| **Tugas 6** | Penerapan pola Django REST Framework pada bagian `Skill`: `SkillSerializer` dengan validasi `strip_tags` dan field star read-only, permission `IsPortfolioOwnerOrEditorOrReadOnly` untuk empat peran, API view berbasis fungsi di `/api/v1/skills/`, halaman kelola Skills yang menampilkan, mencari, menambah, memberi star, mengedit (`PATCH`), dan menghapus lewat API, serta 24 test `APITestCase` termasuk pemeriksaan CSRF. |
+| **Tugas 6** | Penerapan pola Django REST Framework pada bagian `Skill`: `SkillSerializer` dengan validasi `strip_tags` dan field star read-only, permission `IsPortfolioOwnerOrEditorOrReadOnly` untuk empat peran, API view berbasis fungsi di `/api/v1/skills/`, halaman kelola Skills yang menampilkan, mencari, menambah, memberi star, mengedit (`PATCH`), dan menghapus lewat API, serta 25 test `APITestCase` termasuk pemeriksaan CSRF. |
 | **Tugas berikutnya** | Akan ditambahkan pada bagian ini beserta perubahan fitur, konsep yang dipelajari, dan catatan implementasinya. |
 
 ### Timeline Implementasi
@@ -1006,7 +1006,7 @@ Pola Tutorial 7 saya terapkan pada `Skill`, yaitu bagian yang saya kerjakan send
 | `main/api_urls.py` | `api:skill-list`, `api:skill-detail`, `api:skill-star` di bawah `/api/v1/skills/` |
 | `templates/skills_manage.html` | Halaman kelola yang memakai API baru |
 | `templates/components/skill_edit_modal.html` | Modal edit yang mengirim `PATCH` |
-| `main/tests_api_skills.py` | 24 test: 21 `APITestCase` untuk API dan 3 untuk halaman |
+| `main/tests_api_skills.py` | 25 test: 22 `APITestCase` untuk API dan 3 untuk halaman |
 
 **2. Hak akses empat peran di API**
 
@@ -1038,14 +1038,14 @@ Pencarian yang tidak menemukan apa pun mengembalikan `[]` dengan status 200, kar
 
 **5. Pengujian**
 
-`python manage.py test main` menjalankan 67 test dan semuanya lulus (43 test sebelumnya ditambah 24 test Skill). Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`; setelah dikembalikan, semuanya lulus lagi.
+`python manage.py test main` menjalankan 68 test dan semuanya lulus (43 test sebelumnya ditambah 25 test Skill). Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`; setelah dikembalikan, semuanya lulus lagi.
 
 Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memakai nama skill unik dan membandingkan jumlah dengan nilai awal, bukan angka mutlak. Test pertama saya sempat gagal delapan kali (`13 != 1`) karena asumsi yang salah ini, dan sumber masalahnya ada di test, bukan di kode produksi.
 
 **6. Keterbatasan yang saya sadari**
 
 - Test memeriksa sisi server dan isi HTML kerangka halaman, tetapi perilaku JavaScript di browser (modal edit, toast, perubahan baris setelah star) tidak tercakup test otomatis dan perlu dicoba langsung.
-- Pesan 403 untuk Editor yang mencoba membuat atau menghapus berasal dari teks bawaan DRF (dalam bahasa Inggris), karena `IsPortfolioOwnerOrEditorOrReadOnly` tidak mendefinisikan `message` sendiri.
+- Pesan 403 pada endpoint Skill ditulis dalam bahasa Indonesia lewat atribut `message` pada `IsPortfolioOwnerOrEditorOrReadOnly`, supaya toast di halaman mudah dibaca. Endpoint star memakai `IsAuthenticated` bawaan DRF, sehingga penolakannya untuk pengunjung masih berbahasa Inggris; halaman tidak pernah memicunya karena pengunjung hanya melihat tautan ke login.
 - Star pada landing page (`#skills`) masih memakai form POST ke `toggle_skill_star`, sehingga memuat ulang halaman. Yang memakai API hanya halaman `/skills/manage/`.
 
 **7. Skenario pengujian**
