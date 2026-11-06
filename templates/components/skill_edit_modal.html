@@ -1,0 +1,57 @@
+<div
+    id="edit-skill-modal"
+    class="project-modal"
+    popover="auto"
+    role="dialog"
+    aria-labelledby="edit-skill-modal-title"
+>
+    <button
+        type="button"
+        class="project-modal__backdrop"
+        popovertarget="edit-skill-modal"
+        popovertargetaction="hide"
+        aria-label="Tutup"
+    ></button>
+
+    <div class="project-modal__content">
+        <div class="project-modal__header">
+            <h2 id="edit-skill-modal-title">Edit Skill</h2>
+
+            <button
+                type="button"
+                class="project-modal__close"
+                popovertarget="edit-skill-modal"
+                popovertargetaction="hide"
+                aria-label="Tutup"
+            >&times;</button>
+        </div>
+
+        {# No action/method: this form is only ever submitted by fetch() as a PATCH. #}
+        <form id="edit-skill-form" class="project-form">
+            {% for field in edit_form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
+
+                    {{ field }}
+                </div>
+            {% endfor %}
+
+            <div class="form-actions">
+                <button type="submit" class="button">
+                    Simpan Perubahan
+                </button>
+
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    popovertarget="edit-skill-modal"
+                    popovertargetaction="hide"
+                >
+                    Batal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

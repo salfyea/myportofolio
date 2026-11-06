@@ -338,6 +338,8 @@ def show_skills_manage(request):
         "name": PROFILE_NAME,
         "is_editor": is_editor(request.user),
         "form": SkillForm(),
+        # Distinct id prefix so the edit modal does not reuse the add form's ids.
+        "edit_form": SkillForm(auto_id="edit_%s"),
     }
     return render(request, "skills_manage.html", context)
 
