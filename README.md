@@ -98,6 +98,7 @@ Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
 | **Tugas 5** | Penerapan seluruh pola Tutorial 5 pada bagian `Skill`: tabel skill dimuat lewat AJAX beserta jumlah dan status star, pencarian berdasarkan nama dengan debouncing, tambah skill lewat modal dan `fetch` dengan respons 201, 400, dan 403, toast untuk keberhasilan maupun kegagalan, pembersihan input dengan `strip_tags`, serta pemindahan `getCookie` ke berkas JavaScript bersama. |
 | **Tutorial 6** | Latihan HTMX pada app terpisah `contacts`: model `Contact`, partial template, tambah, hapus, pencarian langsung dengan debouncing, dan edit di dalam baris tabel memakai atribut `hx-*`, ditambah tiga latihan (field `phone`, `hx-swap="beforeend"`, dan feedback lewat `hx-swap-oob`). |
 | **Tutorial 7** | Implementasi Django REST Framework pada `Project`: `ProjectSerializer` dengan validasi dan field star hasil perhitungan, permission class `IsPortfolioOwnerOrReadOnly` dan `IsPortfolioOwnerOrEditorOrReadOnly`, API view berbasis fungsi di bawah `/api/v1/`, endpoint star, halaman Projects yang memakai API baru, serta 13 test dengan `APITestCase` termasuk pemeriksaan CSRF. |
+| **Tugas 6** | Penerapan pola Django REST Framework pada bagian `Skill`: `SkillSerializer` dengan validasi `strip_tags` dan field star read-only, permission `IsPortfolioOwnerOrEditorOrReadOnly` untuk empat peran, API view berbasis fungsi di `/api/v1/skills/`, halaman kelola Skills yang menampilkan, mencari, menambah, memberi star, mengedit (`PATCH`), dan menghapus lewat API, serta 24 test `APITestCase` termasuk pemeriksaan CSRF. |
 | **Tugas berikutnya** | Akan ditambahkan pada bagian ini beserta perubahan fitur, konsep yang dipelajari, dan catatan implementasinya. |
 
 ### Timeline Implementasi
@@ -116,9 +117,10 @@ flowchart LR
     J[Tugas 5<br/>AJAX pada Skill]
     K[Tutorial 6<br/>HTMX pada app contacts]
     L[Tutorial 7<br/>Django REST Framework]
-    M[Tugas Berikutnya<br/>Pengembangan lanjutan]
+    M[Tugas 6<br/>DRF pada Skill]
+    N[Tugas Berikutnya<br/>Pengembangan lanjutan]
 
-    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K --> L --> M
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K --> L --> M --> N
 ```
 
 ---
@@ -424,6 +426,7 @@ Setelah server berjalan, fitur interaktif minggu ini dapat dicoba pada halaman b
 | --- | --- |
 | `/projects/` | Data dimuat lewat AJAX. Ketik di kotak Cari untuk melihat debouncing, dan tambah project lewat modal (khusus superuser). |
 | `/skills/manage/` | Tabel skill dimuat lewat AJAX, dicari berdasarkan nama, dan ditambah lewat modal (khusus superuser). |
+| `/api/v1/skills/` dan `/api/v1/projects/` | Browsable API dari Django REST Framework. Buka di browser, login lewat tautan di pojok kanan atas, lalu coba `POST`, `PATCH`, dan `DELETE` sesuai peran akun. |
 | `/api/projects/` dan `/api/skills/` | Melihat JSON mentahnya, termasuk `star_count` dan `is_starred`. Nilai `is_starred` bergantung pada akun yang sedang login. |
 
 ### Setup Mingguan
@@ -958,6 +961,106 @@ Dua test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` karen
 | Pengguna biasa memanggil `DELETE /api/v1/projects/<uuid>/` | 403 dan data di database tidak berubah |
 | `POST` ke API tanpa header `X-CSRFToken` (session login) | 403 |
 
+### Tugas 6
+
+1. **Apa itu REST, mengapa mengembalikan JSON saja belum cukup untuk menyebut sebuah API RESTful, dan apa beda PUT dengan PATCH?**
+
+   REST (*Representational State Transfer*) adalah gaya merancang API di atas HTTP. Intinya, setiap hal yang dikelola, misalnya sebuah skill, dianggap sebagai *resource* yang punya alamat sendiri (`/api/v1/skills/<uuid>/`). Resource itu dioperasikan lewat method HTTP standar, bukan lewat nama aksi di URL: `GET` untuk membaca, `POST` untuk membuat, `PUT` dan `PATCH` untuk mengubah, `DELETE` untuk menghapus. Server menjawab dengan status HTTP yang bermakna (201, 204, 400, 403, 404, 405), tidak menyimpan keadaan klien di antara request (*stateless*), dan setiap request membawa informasi yang cukup untuk dipahami sendiri.
+
+   Mengembalikan JSON saja belum membuat API menjadi RESTful, karena JSON hanyalah format data. Jalur lama di project ini adalah contohnya: `/skills/add-ajax/` dan `/skills/<uuid>/delete/` mengembalikan JSON atau redirect, tetapi aksinya tertulis di URL (`add`, `delete`), semuanya memakai `POST`, dan tidak ada alamat resource yang konsisten. Pada API baru, alamatnya tetap `/api/v1/skills/<uuid>/` dan yang membedakan aksi adalah method-nya. Status HTTP juga ikut menjadi bagian kontrak: `201` setelah membuat, `204` tanpa isi setelah menghapus, `400` untuk input tidak valid, `403` untuk tindakan yang tidak diizinkan, dan `404` untuk resource yang tidak ada. API yang selalu membalas `200` dengan JSON berisi `{"success": false}` memaksa klien menebak hasilnya.
+
+   `PUT` mengganti seluruh resource, sehingga semua field wajib dikirim. Jika ada field yang hilang, serializer menolaknya dengan 400 (di test saya, `PUT` dengan hanya `name` ditolak). `PATCH` mengubah sebagian: hanya field yang dikirim yang berubah, dan view memakai `partial=True`. Pada halaman Skill, modal edit mengirim `PATCH` karena pengguna biasanya hanya memperbaiki satu atau dua kolom, misalnya mengubah kategori dari `Tools` menjadi `Framework` tanpa menyentuh `name` dan `icon_url`. `PUT` lebih cocok saat klien memang memegang data lengkap dan ingin menggantinya sekaligus, misalnya mengimpor ulang satu skill dari berkas sumber yang lengkap. `PUT` juga idempoten: mengirim isi yang sama dua kali menghasilkan keadaan akhir yang sama.
+
+2. **Apa peran serializer pada Django REST Framework dan apa keuntungannya dibandingkan merakit dictionary secara manual dengan `JsonResponse`?**
+
+   Serializer adalah penerjemah dua arah antara objek model dan data yang dipertukarkan dengan klien. Ke luar, ia mengubah `Skill` menjadi dictionary (lalu JSON). Ke dalam, ia memvalidasi data mentah dari `request.data` dan menyimpannya lewat `.save()`. `SkillSerializer` di `main/serializers.py` memegang tiga tanggung jawab sekaligus: daftar `fields` yang boleh tampil, aturan validasi (`validate_name` dan `validate_category` memakai `strip_tags`, sedangkan `URLField` menolak `javascript:`), dan field hasil perhitungan yang bersifat *read-only* (`star_count`, `is_starred`, `starred_by_names`).
+
+   Pada Tutorial 5, `get_skills_json` menyusun dictionary satu per satu, dan `create_skill_ajax` memvalidasi lewat `SkillForm`, memeriksa izin, lalu memilih status HTTP di dalam satu fungsi. Itu berjalan, tetapi ada beberapa kelemahan. Bentuk data dan aturan validasi tersebar di banyak tempat, dan setiap endpoint baru harus mengulanginya. Mudah ada field yang terlupa atau salah nama. Field yang tidak boleh diubah klien (misalnya jumlah star) tidak terlindungi secara otomatis. Dengan serializer, mengirim `star_count: 99` atau `starred_by` pada `POST` diabaikan, dan ada test yang membuktikannya. Daftar `fields` yang ditulis eksplisit juga menjamin email atau password hash pengguna tidak ikut terkirim, karena `starred_by_names` hanya berisi username.
+
+   Keuntungan lain: serializer yang sama dipakai untuk daftar, detail, `POST`, `PUT`, `PATCH`, dan star, sehingga representasi datanya seragam. Error validasi juga otomatis berbentuk `{field: [pesan]}` dengan status 400, yang langsung bisa dibaca JavaScript dan ditampilkan lewat toast. Pembagian tugasnya jadi jelas: serializer mengurus data, permission class mengurus izin, dan view tinggal menyambungkan keduanya.
+
+3. **Apa perbedaan autentikasi dan otorisasi pada DRF, dan mengapa hak akses harus diperiksa dengan permission class di server, bukan hanya dengan menyembunyikan tombol di template?**
+
+   Autentikasi menjawab "siapa kamu?", sedangkan otorisasi menjawab "apa yang boleh kamu lakukan?". Di DRF keduanya terpisah. `SessionAuthentication` membaca cookie session yang sudah ada dan mengisi `request.user`, lalu permission class memutuskan apakah request itu boleh diteruskan ke view. Pengunjung anonim tetap berhasil "diautentikasi" sebagai `AnonymousUser`, tetapi tidak diotorisasi untuk menulis. Karena `SessionAuthentication` tidak punya skema `WWW-Authenticate`, penolakannya berstatus 403, bukan 401.
+
+   Aturan empat peran pada Skill ditulis di satu tempat, `IsPortfolioOwnerOrEditorOrReadOnly`: method aman terbuka untuk semua, superuser boleh semuanya, dan Editor hanya boleh `PUT` dan `PATCH`. Endpoint star memakai `IsAuthenticated`, dan akun yang memberi star selalu diambil dari `request.user`, bukan dari body request.
+
+   Menyembunyikan tombol hanyalah kenyamanan tampilan. Template berjalan di browser yang dikendalikan pengguna, dan siapa pun bisa membuka DevTools, memakai `curl`, atau mengirim `fetch()` sendiri ke `DELETE /api/v1/skills/<uuid>/` tanpa pernah menyentuh tombol. Kalau server tidak memeriksa, pengguna biasa bisa menghapus data. Karena itu penjagaan sesungguhnya ada di server: test saya memanggil endpoint secara langsung sebagai pengunjung, pengguna biasa, dan Editor, lalu memeriksa bahwa isi database tidak berubah. Tombol yang disembunyikan tetap berguna, tetapi hanya sebagai UX, bukan sebagai keamanan.
+
+4. **Mengapa permintaan yang mengubah data tetap memerlukan token CSRF ketika API memakai `SessionAuthentication`, dan mengapa test dengan `force_authenticate` tidak cukup untuk membuktikan perlindungan CSRF berjalan?**
+
+   `SessionAuthentication` mengenali pengguna dari cookie session, dan browser menyertakan cookie itu secara otomatis ke domain yang sama pada setiap request, termasuk request yang dipicu halaman milik orang lain. Jika seorang superuser sedang login lalu membuka halaman jahat, halaman itu bisa membuat form tersembunyi yang mengirim `POST` atau `DELETE` ke API saya. Browser ikut mengirim cookie `sessionid`, sehingga server mengira superuser sendiri yang meminta. Itulah serangan CSRF. Token CSRF menutup celah ini karena halaman jahat tidak bisa membaca cookie `csrftoken` milik domain saya (*same-origin policy*), jadi tidak bisa menyertakan header `X-CSRFToken` yang benar. Karena itu DRF memaksa pemeriksaan CSRF pada `SessionAuthentication` untuk method yang mengubah data (`POST`, `PUT`, `PATCH`, `DELETE`), dan halaman Skill selalu mengirim `X-CSRFToken` lewat helper `writeSkill`. Saya juga tidak memakai `@csrf_exempt`. Untuk pengguna biasa yang hanya memberi star, `{% csrf_token %}` di template memastikan cookie `csrftoken` selalu terbit.
+
+   `force_authenticate` langsung menetapkan `request.user` dan melewati proses login. Pemeriksaan CSRF milik `SessionAuthentication` tidak pernah dijalankan, sehingga request berhasil walaupun tidak membawa token. Test yang memakainya bisa lulus padahal perlindungan CSRF rusak. Karena itu test CSRF saya memakai `APIClient(enforce_csrf_checks=True)` dan `.login()`: login lewat session sungguhan, lalu `POST`, `PATCH`, `DELETE`, dan star tanpa header `X-CSRFToken` harus berstatus 403 dan database tidak berubah. Test pasangannya mengambil token dari cookie lalu mengirimnya, dan harus berhasil dengan 201, supaya jelas bahwa 403 tadi memang karena token, bukan karena hal lain.
+
+### Catatan Implementasi Tugas 6
+
+**1. Bagian yang dipilih: Skill**
+
+Pola Tutorial 7 saya terapkan pada `Skill`, yaitu bagian yang saya kerjakan sendiri pada Tugas 3 sampai 5. Skill sudah memiliki halaman kelola, pencarian, star, tambah lewat modal, dan edit lewat halaman terpisah. Model tidak berubah, dan tidak ada migrasi baru karena relasi `starred_by` sudah ada sejak Tugas 4.
+
+| Berkas | Isi |
+| --- | --- |
+| `main/serializers.py` | `SkillSerializer`: `fields` eksplisit, `validate_name` dan `validate_category`, tiga field star read-only |
+| `main/api_views.py` | `skill_list` (GET, POST, `?name=`), `skill_detail` (GET, PUT, PATCH, DELETE), `skill_star` (POST) |
+| `main/api_urls.py` | `api:skill-list`, `api:skill-detail`, `api:skill-star` di bawah `/api/v1/skills/` |
+| `templates/skills_manage.html` | Halaman kelola yang memakai API baru |
+| `templates/components/skill_edit_modal.html` | Modal edit yang mengirim `PATCH` |
+| `main/tests_api_skills.py` | 24 test: 21 `APITestCase` untuk API dan 3 untuk halaman |
+
+**2. Hak akses empat peran di API**
+
+| Peran | Baca | Star | `PUT` / `PATCH` | `POST` / `DELETE` |
+| --- | --- | --- | --- | --- |
+| Pengunjung | Boleh | Ditolak (403) | Ditolak | Ditolak |
+| Pengguna biasa | Boleh | Boleh | Ditolak | Ditolak |
+| Editor | Boleh | Boleh | Boleh | Ditolak |
+| Pemilik (superuser) | Boleh | Boleh | Boleh | Boleh |
+
+Permission memakai `IsPortfolioOwnerOrEditorOrReadOnly` dari Tutorial 7, yang sebelumnya sengaja belum dipasang pada Projects. View lama sudah konsisten dengan aturan ini: `update_skill` menerima superuser dan Editor, sedangkan `create_skill` dan `delete_skill` hanya superuser, sehingga tidak ada view lama yang perlu dipersempit. Peran Editor ditentukan oleh keanggotaan Group `Editor`, yang sudah dibuat oleh migrasi `0009_create_editor_group`.
+
+**3. Kontrak API**
+
+| Method | Endpoint | Tindakan | Status |
+| --- | --- | --- | --- |
+| GET | `/api/v1/skills/` | Daftar; `?name=` untuk mencari | 200 |
+| POST | `/api/v1/skills/` | Tambah skill (pemilik) | 201, 400, 403 |
+| GET | `/api/v1/skills/<uuid>/` | Detail | 200, 404 |
+| PUT / PATCH | `/api/v1/skills/<uuid>/` | Ubah (Editor atau pemilik) | 200, 400, 403, 404 |
+| DELETE | `/api/v1/skills/<uuid>/` | Hapus (pemilik) | 204, 403, 404 |
+| POST | `/api/v1/skills/<uuid>/star/` | Beri atau batalkan star (login) | 200, 403, 404 |
+
+Pencarian yang tidak menemukan apa pun mengembalikan `[]` dengan status 200, karena daftar kosong adalah hasil yang sah.
+
+**4. Halaman Skill**
+
+`/skills/manage/` sekarang memuat, mencari, menambah, memberi star, mengedit, dan menghapus skill lewat `/api/v1/skills/` tanpa reload. Semua request tulis melewati satu helper, `writeSkill(url, method, payload)`, yang mengirim JSON beserta header `X-CSRFToken`, dan membaca error serializer (400) maupun `detail` (403) menjadi pesan toast. Tombol star, edit, dan hapus memakai *event delegation* pada `<tbody>`. Setelah star, hanya baris yang bersangkutan dirender ulang. Tombol Edit membuka modal yang diisi dari data baris, lalu mengirim `PATCH`; modal ini hanya dirender untuk Editor dan superuser. Baris tetap dirakit dengan `createElement` dan `textContent`, sehingga nilai teks tidak pernah ditafsirkan sebagai HTML. Jalur lama (`get_skills_json`, `create_skill_ajax`, `update_skill`, `delete_skill`, `toggle_skill_star`) saya pertahankan, begitu pula star pada landing page yang masih memakai form biasa.
+
+**5. Pengujian**
+
+`python manage.py test main` menjalankan 67 test dan semuanya lulus (43 test sebelumnya ditambah 24 test Skill). Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`; setelah dikembalikan, semuanya lulus lagi.
+
+Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memakai nama skill unik dan membandingkan jumlah dengan nilai awal, bukan angka mutlak. Test pertama saya sempat gagal delapan kali (`13 != 1`) karena asumsi yang salah ini, dan sumber masalahnya ada di test, bukan di kode produksi.
+
+**6. Keterbatasan yang saya sadari**
+
+- Test memeriksa sisi server dan isi HTML kerangka halaman, tetapi perilaku JavaScript di browser (modal edit, toast, perubahan baris setelah star) tidak tercakup test otomatis dan perlu dicoba langsung.
+- Pesan 403 untuk Editor yang mencoba membuat atau menghapus berasal dari teks bawaan DRF (dalam bahasa Inggris), karena `IsPortfolioOwnerOrEditorOrReadOnly` tidak mendefinisikan `message` sendiri.
+- Star pada landing page (`#skills`) masih memakai form POST ke `toggle_skill_star`, sehingga memuat ulang halaman. Yang memakai API hanya halaman `/skills/manage/`.
+
+**7. Skenario pengujian**
+
+| Skenario | Hasil yang diharapkan |
+| --- | --- |
+| Pengunjung membuka `/skills/manage/` | Tabel dimuat lewat `GET /api/v1/skills/`, tanpa tombol aksi, star berupa tautan ke login |
+| Pengguna biasa menekan star dua kali | `POST` berstatus 200 lalu jumlah naik dan kembali, hanya baris itu yang berubah |
+| Editor menekan Edit, mengubah kategori, lalu Simpan | `PATCH` berstatus 200, modal tertutup, toast, baris menampilkan nilai baru |
+| Editor memanggil `POST` atau `DELETE` ke API | 403 dan database tidak berubah; tombol Hapus tidak tampil |
+| Superuser menambah skill lewat modal | `POST` berstatus 201 dengan `X-CSRFToken`, modal tertutup, toast, daftar dimuat ulang |
+| Nama berisi spasi atau hanya tag HTML | 400, toast berisi pesan serializer |
+| `POST` ke API tanpa header `X-CSRFToken` (session login) | 403 |
+| Membuka `/api/v1/skills/` di browser | Browsable API tampil |
+
 ---
 
 
@@ -974,11 +1077,11 @@ AI tidak digunakan sebagai pengganti proses implementasi dan verifikasi. Setiap 
 | --- | --- |
 | **ChatGPT** | Membantu memahami HTML/CSS, debugging frontend, responsive layout, dan penyusunan dokumentasi/refleksi pada tugas-tugas awal |
 | **Claude** | Membantu memahami konsep `ModelForm`, serializer Django, JSON, CSRF, AJAX, dan XSS, merencanakan branch, menyusun prompt kerja, membuat diagram pada README, menyusun draf dokumentasi, serta debugging backend/deployment |
-| **Claude Code** | Digunakan pada Tutorial 4 sampai Tugas 5 sebagai asisten implementasi di dalam VS Code untuk menulis perubahan kode langsung pada repository, dengan pembagian pekerjaan per branch |
+| **Claude Code** | Digunakan pada Tutorial 4 sampai Tugas 6 sebagai asisten implementasi di dalam VS Code untuk menulis perubahan kode langsung pada repository, dengan pembagian pekerjaan per branch |
 
-### Pembagian Peran pada Tutorial 4 sampai Tugas 5
+### Pembagian Peran pada Tutorial 4 sampai Tugas 6
 
-Pada empat minggu terakhir saya memisahkan dua jenis penggunaan AI secara sadar:
+Pada beberapa minggu terakhir saya memisahkan dua jenis penggunaan AI secara sadar:
 
 ```text
 Claude (chat)                     Claude Code (VS Code)
