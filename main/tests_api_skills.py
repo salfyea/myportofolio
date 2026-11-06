@@ -127,6 +127,13 @@ class SkillAPITest(APITestCase):
         self.assertEqual(response.content, b"")
         self.assertFalse(Skill.objects.filter(pk=self.skill.id).exists())
 
+    def test_rejection_explains_why_in_the_response(self):
+        # The page shows this text in a toast, so it must be readable, not generic.
+        self.client.force_authenticate(user=self.editor)
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("pemilik portofolio", response.data["detail"])
+
     def test_staff_flag_alone_grants_nothing(self):
         self.visitor.is_staff = True
         self.visitor.save()
