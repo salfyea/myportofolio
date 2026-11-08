@@ -3,6 +3,7 @@
   <td>{{ contact.email }}</td>
   <td>{{ contact.phone }}</td>
   <td>
+    {% if user.is_superuser %}
     <button hx-get="{% url 'contacts:contact_edit' contact.id %}"
             hx-target="closest tr"
             hx-swap="outerHTML">
@@ -14,5 +15,6 @@
             hx-confirm="Yakin hapus {{ contact.name }}?">
       Hapus
     </button>
+    {% endif %}
   </td>
 </tr>

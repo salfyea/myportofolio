@@ -9,6 +9,7 @@
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <h1>Daftar Kontak</h1>
 
+  {% if user.is_superuser %}
   <h2>Tambah Kontak</h2>
   <form hx-post="{% url 'contacts:contact_add' %}"
         hx-target="#contact-rows"
@@ -20,6 +21,7 @@
     <input type="tel" name="phone" placeholder="Telepon">
     <button type="submit">Tambah</button>
   </form>
+  {% endif %}
 
   <input type="search" name="q" placeholder="Cari kontak..."
          hx-get="{% url 'contacts:contact_search' %}"
