@@ -18,7 +18,7 @@ jobs:
   test:
     name: Check and test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       # Dummy values: the suite uses SQLite and never calls external services.
       SECRET_KEY: ci-only-not-a-real-secret
@@ -30,10 +30,10 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: requirements*.txt
 
       - name: Install dependencies
-        run: python -m pip install -r requirements.txt
+        run: python -m pip install -r requirements-dev.txt
 
       - name: Django system check
         run: python manage.py check
@@ -41,6 +41,10 @@ jobs:
       - name: Ensure no model change is missing a migration
         run: python manage.py makemigrations --check --dry-run
 
-      # "main" (not bare "test") keeps a local Selenium script from running.
-      - name: Run tests
-        run: python manage.py test main
+      # Chrome is preinstalled on ubuntu-latest, so the Selenium tests run here too.
+      # Both apps are listed because "test main" alone would skip the contacts tests.
+      - name: Run tests with coverage
+        run: python -m coverage run manage.py test main contacts
+
+      - name: Enforce 90 percent coverage
+        run: python -m coverage report --fail-under=90
