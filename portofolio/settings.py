@@ -40,7 +40,13 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Debug pages leak source code and settings, so production defaults to off.
+# Set DEBUG=True/False in the environment to override either default.
+DEBUG = os.getenv('DEBUG', 'False' if PRODUCTION else 'True').lower() == 'true'
+
+# Cookies are only sent over HTTPS in production; plain-HTTP local dev still works.
+SESSION_COOKIE_SECURE = PRODUCTION
+CSRF_COOKIE_SECURE = PRODUCTION
 
 
 # Application definition
