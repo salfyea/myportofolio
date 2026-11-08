@@ -9,6 +9,7 @@ class IsPortfolioOwnerOrReadOnly(BasePermission):
     message = "Only the portfolio owner can change projects."
 
     def has_permission(self, request, view):
+        """Allow reads for everyone and writes for superusers only."""
         return request.method in SAFE_METHODS or request.user.is_superuser
 
 
@@ -21,6 +22,7 @@ class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
     )
 
     def has_permission(self, request, view):
+        """Reads: anyone. PUT and PATCH: Editor or owner. POST and DELETE: owner only."""
         if request.method in SAFE_METHODS:
             return True
 
