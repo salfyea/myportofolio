@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
@@ -20,7 +21,15 @@ class ContactListTest(TestCase):
         self.assertContains(response, "Tidak ada kontak.")
 
 
+def login_owner(client):
+    owner = User.objects.create_superuser("owner", "o@example.com", "pw-owner-1")
+    client.force_login(owner)
+
+
 class ContactAddTest(TestCase):
+    def setUp(self):
+        login_owner(self.client)
+
     def test_add_creates_contact_and_returns_rows_fragment(self):
         response = self.client.post(
             reverse("contacts:contact_add"),
@@ -55,6 +64,7 @@ class ContactAddTest(TestCase):
 
 class ContactDeleteTest(TestCase):
     def setUp(self):
+        login_owner(self.client)
         self.contact = Contact.objects.create(name="Citra", email="citra@example.com")
 
     def test_delete_removes_contact_and_returns_empty_200(self):
@@ -105,6 +115,7 @@ class ContactSearchTest(TestCase):
 
 class ContactEditTest(TestCase):
     def setUp(self):
+        login_owner(self.client)
         self.contact = Contact.objects.create(name="Dewi", email="dewi@example.com")
 
     def test_edit_returns_form_row(self):
