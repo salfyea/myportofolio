@@ -327,3 +327,9 @@ class SkillPageTest(APITestCase):
     def test_page_sets_csrf_cookie_for_every_role(self):
         for username in (None, "visitor", "editor", "owner"):
             self.assertIn("csrftoken", self.get_page(username).cookies, username)
+
+    def test_page_has_category_and_sort_controls(self):
+        page = self.get_page().content.decode()
+        self.assertIn('id="skills-category-select"', page)
+        self.assertIn('id="skills-sort-select"', page)
+        self.assertIn('value="stars"', page)
