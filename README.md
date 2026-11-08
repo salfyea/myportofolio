@@ -1073,8 +1073,6 @@ Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memak
 
 Berkas `.github/workflows/ci.yml` berjalan pada setiap `push` dan *pull request* ke `main` di Ubuntu dengan Python 3.11. Langkahnya: pasang `requirements.txt` (dengan cache pip), `python manage.py check`, `python manage.py makemigrations --check --dry-run` (menggagalkan build jika ada perubahan model tanpa migrasi), lalu `python manage.py test main`. `SECRET_KEY` diisi nilai palsu khusus CI karena test memakai SQLite dan tidak memanggil layanan luar, sehingga tidak ada secret asli di repository. Run yang tertimpa push baru pada branch yang sama dibatalkan otomatis (`concurrency`), dan izin token dibatasi `contents: read`.
 
-Saya tidak memasang CD otomatis ke PWS. Awalnya saya menulis job *deploy*, tetapi `pws.cs.ui.ac.id` tidak dapat dijangkau dari luar jaringan kampus (`git ls-remote` ke remote `pws` gagal tersambung), sehingga runner GitHub juga tidak akan bisa mengaksesnya. Job itu saya hapus daripada menyisakan konfigurasi yang tidak pernah bekerja. Deploy ke PWS tetap manual lewat `git push pws`.
-
 ---
 
 
@@ -1136,21 +1134,27 @@ Saya tidak hanya menggunakan satu prompt besar untuk seluruh pengerjaan. Saya me
 8. Rapikan solusi final + dokumentasikan pemahamannya
 ```
 
-### Log Prompting Tugas 6 (Claude Code)
+### Strategi Prompting Tugas 6: Mengantisipasi Kasus Umum AI
 
-Pada Tugas 6 perencanaan dilakukan lebih dulu dengan Claude (chat), lalu eksekusi per branch dengan Claude Code. Berikut prompt saya yang menentukan arah pekerjaan, dikutip apa adanya, beserta dampaknya:
+Pada Tugas 6 saya tidak meminta "buatkan API untuk Skill" lalu menerima hasilnya. Petunjuk tugas sudah memuat beberapa titik rawan, dan dari pengalaman Tutorial 4 sampai 7 saya tahu AI cenderung jatuh di titik yang sama. Karena itu setiap prompt saya arahkan sambil meminta bukti, bukan hanya kode. Perencanaan dilakukan lebih dulu dengan Claude (chat), lalu eksekusi per branch dengan Claude Code.
 
-| Prompt saya | Dampak |
-| --- | --- |
-| "coba baca ini dan assignment06.md yaa utk lanjtuin tugas ini" (disertai rencana lima branch dari chat sebelumnya) | AI membaca spesifikasi dan rencana, lalu mengerjakan branch serializer, API view, frontend, test, dan README satu per satu |
-| "okk gas" | Persetujuan atas rencana: star dipindahkan ke `skills_manage.html` dan `index.html` tidak diubah |
-| "jgn co authored claude ya kalau commit.." | Semua commit berikutnya tidak memuat trailer `Co-Authored-By`; keterlibatan AI saya jelaskan di README ini |
-| "loh, perbaiki apa yg perlu kamu perbaiki dong" | AI berhenti dengan daftar "yang masih kamu pegang"; setelah teguran ini pesan 403 diindonesiakan, test ditambah, dan README disesuaikan |
-| "Emg ga bole pilih bagian lain?" lalu "oh oke yauda skill aja" | AI menjelaskan syarat "Tugas 3 sampai 5, bukan model tutorial" dan membandingkan Project, Skill, Experience sebelum saya memutuskan tetap memakai Skill |
-| "pahami aja dulu, lets make a plan" | AI hanya membaca dan menyusun rencana, belum mengubah apa pun |
-| "kerjain aja dulu yaa, maksimalin sampe nilai 4" (sekaligus meminta CI/CD) | Ditambahkan GitHub Actions CI, fitur filter dan urutan, pengujian browser, serta dokumentasi AI ini |
+| Kasus yang sering muncul saat memakai AI | Mengapa penting (kaitannya dengan tugas) | Arahan dan bukti di proyek ini |
+| --- | --- | --- |
+| AI memilih model termudah, misalnya `Project` yang sudah dipakai di tutorial | Tugas meminta bagian yang saya kerjakan sendiri pada Tugas 3 sampai 5, bukan model tutorial | Saya menanyakan "Emg ga bole pilih bagian lain?" untuk memahami batasannya. Setelah membandingkan Project, Skill, dan Experience, saya tetap memakai `Skill` |
+| Semua test memakai `force_authenticate`, lalu CSRF dianggap terbukti | `force_authenticate` melewati proses login dan pemeriksaan CSRF | Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran, dipasangkan dengan test yang berhasil (201) saat token dikirim, supaya jelas 403 tadi karena token |
+| Test hijau, tetapi tidak benar-benar menjaga aturan | Test yang tidak pernah gagal tidak membuktikan apa pun | Permission Skill sementara saya longgarkan menjadi `AllowAny`; dua test gagal dengan `201 != 403`, lalu dikembalikan |
+| Penolakan hanya diperiksa lewat status HTTP | Tugas meminta isi database ikut diperiksa | `assertSkillUntouched()` memastikan jumlah dan nama skill tidak berubah setelah setiap penolakan |
+| Test mengasumsikan database kosong | Petunjuk menyebut database test kosong, tetapi migrasi data project ini menyeed 12 skill | Delapan test gagal `13 != 1`; test diperbaiki dengan nama unik dan jumlah relatif terhadap nilai awal |
+| Peran Editor dibuat ulang di test dengan cara yang bentrok | Petunjuk meminta grup `Editor` dibuat di `setUp()`, padahal migrasi `0009` sudah membuatnya | Memakai `get_or_create`, sehingga test tetap benar di database yang sudah berisi grup tersebut |
+| Siapa pemberi star diambil dari body request | Tugas meminta akun selalu dari `request.user` | Ada test yang mengirim `user` dan `user_id` milik akun lain; hasilnya tetap akun yang login |
+| Serializer membocorkan data akun lewat `starred_by` | Email dan password hash tidak boleh tampil | `starred_by_names` hanya berisi username, dan test memeriksa bahwa email serta `pbkdf2` tidak ada di respons |
+| Field hasil perhitungan bisa ditimpa klien | Field star harus read-only | Test mengirim `star_count: 99` dan `starred_by` pada `POST`; semuanya diabaikan |
+| Star lewat `fetch()`, tetapi cookie `csrftoken` tidak pernah terbit untuk pengguna biasa | Petunjuk menyebut halaman harus tetap menyetel cookie CSRF | Template menyertakan `{% csrf_token %}`, dan test memeriksa cookie untuk pengunjung, pengguna biasa, Editor, dan pemilik |
+| Tombol disembunyikan, tetapi server tidak memeriksa | Hak akses harus ditegakkan di permission class | Test memanggil API langsung sebagai tiap peran, termasuk akun `is_staff` tanpa peran, yang tetap ditolak |
+| AI menambah cakupan di luar permintaan | Pekerjaan yang tidak saya pahami tidak bisa saya pertanggungjawabkan | Star di landing page sengaja tidak diubah; perubahan dibatasi pada halaman Skill, dan trailer `Co-Authored-By` otomatis saya minta dihilangkan |
+| AI melaporkan "selesai" padahal masih ada yang bisa dikerjakan | Laporan AI bukan bukti | Saya menegur "loh, perbaiki apa yg perlu kamu perbaiki dong"; sesudahnya pesan 403 diindonesiakan dan diberi test |
 
-Riwayat lengkap percakapan tersimpan di sesi Claude Code saya; tabel di atas adalah ringkasan prompt yang mengubah keputusan.
+Pola prompt yang saya pakai berulang: meminta AI membandingkan hasilnya dengan teks tugas, meminta bukti (test yang gagal ketika aturan dilanggar, perintah Git, isi database) alih-alih ringkasan, dan memutuskan sendiri pilihan yang menyangkut cakupan, misalnya tetap memakai `Skill` dan membiarkan `index.html` apa adanya. Riwayat lengkap percakapan tersimpan di sesi Claude Code saya.
 
 # Evaluasi Kritis terhadap AI
 
@@ -1248,10 +1252,6 @@ Dalam satu perintah AI menjalankan `manage.py check` dengan Python sistem (bukan
 
 Dua kali AI menulis berkas besar lewat *heredoc* di Bash dan gagal dengan `unexpected EOF` karena ada tanda kutip tunggal di dalam teks. Karena gagal sebelum menulis apa pun, tidak ada berkas setengah jadi, tetapi AI harus memeriksa `git status` dulu lalu beralih ke alat tulis berkas. Selain itu, bawaan Claude Code menyarankan trailer `Co-Authored-By` pada commit; saya meminta trailer itu tidak dipakai, dan AI memeriksa riwayat dengan `git log --format=%B | grep -ci co-authored` bernilai 0.
 
-### 17. AI menulis konfigurasi untuk lingkungan yang tidak ia periksa
-
-Draf awal workflow CI berisi job *deploy* otomatis ke PWS. AI baru memeriksa keterjangkauan remote `pws` setelah draf jadi, dan ternyata tidak bisa diakses dari luar kampus. Job itu dihapus. Pelajarannya, konfigurasi CD tidak bisa dinilai benar hanya karena sintaksnya valid; targetnya harus bisa dijangkau.
-
 Tidak semua temuan bersifat negatif. Saat memindahkan `getCookie` ke berkas bersama, AI menemukan salinan lain dari fungsi yang sama di widget chat pada `base.html`, lalu melaporkannya tanpa mengubahnya karena berada di luar permintaan. Perilaku seperti inilah yang saya harapkan, melapor, bukan diam-diam memperluas cakupan pekerjaan.
 
 ---
@@ -1278,7 +1278,6 @@ AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan
 | Test Skill gagal `13 != 1` | Menulis test dengan asumsi database kosong | Menelusuri penyebabnya (data migration menyeed 12 skill), lalu test memakai nama unik dan jumlah relatif terhadap nilai awal |
 | Pesan 403 Editor berbahasa Inggris | Menyerahkannya kembali sebagai "keterbatasan" | Meminta AI memperbaikinya; `message` ditambahkan pada permission dan ada test yang memeriksa isinya |
 | Trailer `Co-Authored-By` pada commit | Bawaan Claude Code menyarankannya | Meminta menghilangkannya, lalu memeriksa `git log` bernilai 0 trailer |
-| Job deploy PWS di CI | Menulis job yang tidak bisa berjalan | Mengecek `git ls-remote pws` (gagal tersambung), menghapus job, dan mendokumentasikan alasannya |
 | Perilaku JavaScript belum teruji | Menyatakan tidak punya alat browser | Meminta hasil maksimal; enam skenario browser dijalankan lewat Selenium untuk tiap peran, dan dua kegagalan awal terbukti salah skrip, bukan salah aplikasi |
 | `getCookie` hanya tersedia di halaman Projects | Memindahkannya ke `static/js/utils.js` dan melaporkan salinan lain di widget chat | Menguji ulang tambah project setelah pemindahan dan membiarkan salinan lokal widget chat tetap terpisah |
 
@@ -1316,7 +1315,7 @@ dibandingkan:
 
 Pelajaran terbesar dari Tutorial 5 dan Tugas 5 adalah bahwa pekerjaan yang dibagi menjadi banyak branch kecil memang memudahkan saya memeriksa hasil AI, tetapi menuntut disiplin pada hal yang bukan kode: memastikan setiap branch benar-benar masuk ke `main`, dan memverifikasi laporan AI lewat perintah Git atau pengujian langsung, bukan hanya mempercayai ringkasannya.
 
-Pada Tugas 6 pelajarannya bertambah: laporan "selesai" dari AI belum berarti selesai. Test hijau tidak membuktikan JavaScript di browser berjalan, dan konfigurasi yang sintaksnya benar (seperti job deploy) belum tentu bisa dijalankan. Karena itu pada Tugas 6 saya menuntut dua bukti tambahan: percobaan dengan sengaja merusak permission agar test gagal, dan klik-through otomatis di browser untuk setiap peran.
+Pada Tugas 6 pelajarannya bertambah: laporan "selesai" dari AI belum berarti selesai. Test hijau tidak membuktikan JavaScript di browser berjalan, Karena itu pada Tugas 6 saya menuntut dua bukti tambahan: percobaan dengan sengaja merusak permission agar test gagal, dan klik-through otomatis di browser untuk setiap peran.
 
 AI saya gunakan sebagai **learning companion**. Keberhasilan suatu solusi tetap saya ukur dari implementasi dan pengujian pada project yang sebenarnya^^
 
