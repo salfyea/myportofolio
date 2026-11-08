@@ -17,6 +17,7 @@ const api = createSkillsApi({
     listUrl: config.listUrl,
     detailUrlTemplate: config.detailUrl,
     starUrlTemplate: config.starUrl,
+    bulkDeleteUrl: config.bulkDeleteUrl,
 });
 
 const searchForm = document.getElementById('skills-search-form');
@@ -27,12 +28,21 @@ const emptyMessage = document.getElementById('empty-message');
 const skillsBody = document.getElementById('skills-body');
 const skillForm = document.getElementById('skill-form');
 const editForm = document.getElementById('edit-skill-form');
+// Bulk delete controls only exist in the owner's page, so each of these may be null.
+const selectAll = document.getElementById('skills-select-all');
+const bulkOpen = document.getElementById('bulk-delete-open');
+const bulkCount = document.getElementById('bulk-count');
+const bulkModal = document.getElementById('bulk-delete-modal');
+const bulkMessage = document.getElementById('bulk-delete-message');
+const bulkConfirm = document.getElementById('bulk-delete-confirm');
 
 let searchDebounceTimer = null;
 let currentController = null;
 let editingSkillId = null;
 // Skills whose star request is still in flight; a second click would race the first.
 const pendingStars = new Set();
+// Ids ticked for bulk delete. Cleared on every reload, so only rows in view can be deleted.
+const selectedIds = new Set();
 
 function showSection(sectionId) {
     displayPageSection(SECTION_IDS, sectionId);
@@ -73,6 +83,20 @@ function syncCategoryOptions(skills) {
     });
 }
 
+function updateSelectionUi() {
+    if (!bulkOpen) {
+        return;
+    }
+
+    const boxes = Array.from(skillsBody.querySelectorAll('input[data-action="select"]'));
+    const checked = boxes.filter(box => box.checked).length;
+
+    bulkOpen.disabled = selectedIds.size === 0;
+    bulkCount.textContent = selectedIds.size + ' dipilih';
+    selectAll.checked = boxes.length > 0 && checked === boxes.length;
+    selectAll.indeterminate = checked > 0 && checked < boxes.length;
+}
+
 async function loadSkills() {
     // Cancel the previous request so a slow, older response
     // cannot overwrite the results of a newer one.
@@ -104,7 +128,9 @@ async function loadSkills() {
         }
 
         syncCategoryOptions(skills);
+        selectedIds.clear();
         skillsBody.replaceChildren(...skills.map(skill => buildSkillRow(skill, permissions)));
+        updateSelectionUi();
         showSection('skills-table');
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -124,7 +150,7 @@ function replaceRow(skill) {
 
     // The table may have been reloaded (a new search) while a request was in flight.
     if (row) {
-        row.replaceWith(buildSkillRow(skill, permissions));
+        row.replaceWith(buildSkillRow(skill, permissions, selectedIds.has(skill.id)));
     }
 }
 
@@ -177,6 +203,21 @@ async function deleteSkill(button) {
     } catch (error) {
         button.disabled = false;
         reportError(error);
+    }
+}
+
+async function bulkDelete() {
+    bulkConfirm.disabled = true;
+
+    try {
+        const result = await api.bulkDelete(Array.from(selectedIds));
+        bulkModal.hidePopover();
+        showToast('Berhasil', result.deleted + ' skill berhasil dihapus!', 'success');
+        loadSkills();
+    } catch (error) {
+        reportError(error);
+    } finally {
+        bulkConfirm.disabled = false;
     }
 }
 
@@ -242,6 +283,44 @@ skillsBody.addEventListener('click', function (event) {
         openEditModal(JSON.parse(button.closest('tr').dataset.skill));
     }
 });
+
+// Checkboxes are not buttons, so ticking a row is a change event, delegated as well.
+skillsBody.addEventListener('change', function (event) {
+    const box = event.target.closest('input[data-action="select"]');
+
+    if (!box) {
+        return;
+    }
+
+    if (box.checked) {
+        selectedIds.add(box.value);
+    } else {
+        selectedIds.delete(box.value);
+    }
+
+    updateSelectionUi();
+});
+
+if (selectAll) {
+    selectAll.addEventListener('change', function () {
+        skillsBody.querySelectorAll('input[data-action="select"]').forEach(function (box) {
+            box.checked = selectAll.checked;
+            if (box.checked) {
+                selectedIds.add(box.value);
+            } else {
+                selectedIds.delete(box.value);
+            }
+        });
+        updateSelectionUi();
+    });
+}
+
+if (bulkOpen) {
+    bulkOpen.addEventListener('click', function () {
+        bulkMessage.textContent = 'Apakah kamu yakin ingin menghapus ' + selectedIds.size + ' skill terpilih?';
+    });
+    bulkConfirm.addEventListener('click', bulkDelete);
+}
 
 if (skillForm) {
     skillForm.addEventListener('submit', addSkill);
