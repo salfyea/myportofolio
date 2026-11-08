@@ -501,8 +501,12 @@ def login_user(request):
     return render(request, "login.html", context)
 
 
+@require_POST
 def logout_user(request):
-    """End the current session and send the visitor back to login."""
+    """End the current session and send the visitor back to login.
+
+    POST only: a GET would let any page log a visitor out with a plain link or image.
+    """
     logout(request)
     response = redirect("main:login")
     response.delete_cookie("last_login")
