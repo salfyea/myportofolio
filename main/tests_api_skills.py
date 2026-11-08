@@ -61,6 +61,42 @@ class SkillAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
+    def test_category_filter_is_case_insensitive_and_exact(self):
+        self.skill.category = "Zzcat"
+        self.skill.save()
+        response = self.client.get(self.list_url, {"category": "zzcat"})
+        self.assertEqual([row["id"] for row in response.data], [str(self.skill.id)])
+        # Exact match: a prefix of the category must not match.
+        self.assertEqual(self.client.get(self.list_url, {"category": "zzc"}).data, [])
+
+    def test_search_and_category_filters_combine(self):
+        self.skill.category = "Zzcat"
+        self.skill.save()
+        response = self.client.get(self.list_url, {"name": "quok", "category": "Zzcat"})
+        self.assertEqual(len(response.data), 1)
+        response = self.client.get(self.list_url, {"name": "quok", "category": "other"})
+        self.assertEqual(response.data, [])
+
+    def test_ordering_by_stars_puts_most_starred_first(self):
+        self.skill.starred_by.add(self.visitor, self.editor, self.owner)
+        response = self.client.get(self.list_url, {"ordering": "stars"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["id"], str(self.skill.id))
+        self.assertEqual(response.data[0]["star_count"], 3)
+        counts = [row["star_count"] for row in response.data]
+        self.assertEqual(counts, sorted(counts, reverse=True))
+        # Same number of rows as the default ordering: nothing is dropped or duplicated.
+        self.assertEqual(len(response.data), len(self.client.get(self.list_url).data))
+
+    def test_default_ordering_is_by_name(self):
+        names = [row["name"] for row in self.client.get(self.list_url).data]
+        self.assertEqual(names, [s.name for s in Skill.objects.order_by("name", "id")])
+
+    def test_unknown_ordering_is_rejected(self):
+        response = self.client.get(self.list_url, {"ordering": "created_at"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ordering", response.data)
+
     def test_missing_skill(self):
         url = reverse("api:skill-detail", args=[uuid.uuid4()])
         self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
@@ -291,3 +327,9 @@ class SkillPageTest(APITestCase):
     def test_page_sets_csrf_cookie_for_every_role(self):
         for username in (None, "visitor", "editor", "owner"):
             self.assertIn("csrftoken", self.get_page(username).cookies, username)
+
+    def test_page_has_category_and_sort_controls(self):
+        page = self.get_page().content.decode()
+        self.assertIn('id="skills-category-select"', page)
+        self.assertIn('id="skills-sort-select"', page)
+        self.assertIn('value="stars"', page)

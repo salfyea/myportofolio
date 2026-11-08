@@ -32,6 +32,23 @@
                 class="project-search__input"
             >
 
+            <select
+                id="skills-category-select"
+                class="project-search__select"
+                aria-label="Filter kategori"
+            >
+                <option value="">Semua kategori</option>
+            </select>
+
+            <select
+                id="skills-sort-select"
+                class="project-search__select"
+                aria-label="Urutkan skill"
+            >
+                <option value="name">Urut nama</option>
+                <option value="stars">Star terbanyak</option>
+            </select>
+
             <button
                 type="submit"
                 class="button"
@@ -96,6 +113,8 @@
         const searchInput = document.getElementById('skills-search-input');
         const SEARCH_DEBOUNCE_DELAY = 300;
         let searchDebounceTimer = null;
+        const categorySelect = document.getElementById('skills-category-select');
+        const sortSelect = document.getElementById('skills-sort-select');
         const emptyMessage = document.getElementById('empty-message');
         const skillsBody = document.getElementById('skills-body');
         const skillForm = document.getElementById('skill-form');
@@ -289,6 +308,20 @@
             return row;
         }
 
+        // Keep the category dropdown in sync with the categories the API has returned.
+        function syncCategoryOptions(skills) {
+            const known = new Set(Array.from(categorySelect.options).map(option => option.value));
+
+            skills.forEach(function (skill) {
+                if (skill.category && !known.has(skill.category)) {
+                    known.add(skill.category);
+                    const option = createElement('option', '', skill.category);
+                    option.value = skill.category;
+                    categorySelect.appendChild(option);
+                }
+            });
+        }
+
         async function fetchSkills(name) {
             // Cancel the previous request so a slow, older response
             // cannot overwrite the results of a newer one.
@@ -305,6 +338,10 @@
             if (name) {
                 url.searchParams.set('name', name);
             }
+            if (categorySelect.value) {
+                url.searchParams.set('category', categorySelect.value);
+            }
+            url.searchParams.set('ordering', sortSelect.value);
 
             try {
                 const response = await fetch(url, {
@@ -319,14 +356,15 @@
                 const skills = await response.json();
 
                 if (skills.length === 0) {
-                    emptyMessage.textContent = name
-                        ? 'Tidak ada skill dengan nama tersebut.'
+                    emptyMessage.textContent = name || categorySelect.value
+                        ? 'Tidak ada skill yang cocok dengan pencarian.'
                         : 'Belum ada skill yang ditambahkan.';
                     skillsBody.replaceChildren();
                     displayPageSection('empty');
                     return;
                 }
 
+                syncCategoryOptions(skills);
                 skillsBody.replaceChildren(...skills.map(buildSkillRowElement));
                 displayPageSection('skills-table');
             } catch (error) {
@@ -442,6 +480,10 @@
         if (editForm) {
             editForm.addEventListener('submit', saveSkill);
         }
+
+        // Changing a dropdown applies immediately; there is nothing to debounce.
+        categorySelect.addEventListener('change', searchSkills);
+        sortSelect.addEventListener('change', searchSkills);
 
         // Wait until the user stops typing before sending a request.
         searchInput.addEventListener('input', function () {

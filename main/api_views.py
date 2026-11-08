@@ -1,5 +1,6 @@
 """REST API views for projects (Tutorial 07) and skills (Individual Assignment 6)."""
 
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
@@ -72,6 +73,9 @@ def project_star(request, project_id):
     serializer = ProjectSerializer(project, context={"request": request})
     return Response(serializer.data)
 
+# Accepted values for ``?ordering=`` on the skill list ("stars" = most starred first).
+SKILL_ORDERINGS = ("name", "stars")
+
 
 @api_view(["GET", "HEAD", "POST"])
 @authentication_classes([SessionAuthentication])
@@ -82,6 +86,19 @@ def skill_list(request):
         name = request.query_params.get("name", "").strip()
         if name:
             skills = skills.filter(name__icontains=name)
+        category = request.query_params.get("category", "").strip()
+        if category:
+            skills = skills.filter(category__iexact=category)
+        ordering = request.query_params.get("ordering", "name")
+        if ordering not in SKILL_ORDERINGS:
+            return Response(
+                {"ordering": [f"Pilih salah satu dari: {', '.join(SKILL_ORDERINGS)}."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if ordering == "stars":
+            skills = skills.annotate(num_stars=Count("starred_by")).order_by(
+                "-num_stars", "name", "id",
+            )
         serializer = SkillSerializer(skills, many=True, context={"request": request})
         return Response(serializer.data)
 
