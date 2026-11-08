@@ -98,7 +98,7 @@ Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
 | **Tugas 5** | Penerapan seluruh pola Tutorial 5 pada bagian `Skill`: tabel skill dimuat lewat AJAX beserta jumlah dan status star, pencarian berdasarkan nama dengan debouncing, tambah skill lewat modal dan `fetch` dengan respons 201, 400, dan 403, toast untuk keberhasilan maupun kegagalan, pembersihan input dengan `strip_tags`, serta pemindahan `getCookie` ke berkas JavaScript bersama. |
 | **Tutorial 6** | Latihan HTMX pada app terpisah `contacts`: model `Contact`, partial template, tambah, hapus, pencarian langsung dengan debouncing, dan edit di dalam baris tabel memakai atribut `hx-*`, ditambah tiga latihan (field `phone`, `hx-swap="beforeend"`, dan feedback lewat `hx-swap-oob`). |
 | **Tutorial 7** | Implementasi Django REST Framework pada `Project`: `ProjectSerializer` dengan validasi dan field star hasil perhitungan, permission class `IsPortfolioOwnerOrReadOnly` dan `IsPortfolioOwnerOrEditorOrReadOnly`, API view berbasis fungsi di bawah `/api/v1/`, endpoint star, halaman Projects yang memakai API baru, serta 13 test dengan `APITestCase` termasuk pemeriksaan CSRF. |
-| **Tugas 6** | Penerapan pola Django REST Framework pada bagian `Skill`: `SkillSerializer` dengan validasi `strip_tags` dan field star read-only, permission `IsPortfolioOwnerOrEditorOrReadOnly` untuk empat peran, API view berbasis fungsi di `/api/v1/skills/`, halaman kelola Skills yang menampilkan, mencari, menambah, memberi star, mengedit (`PATCH`), dan menghapus lewat API, serta 25 test `APITestCase` termasuk pemeriksaan CSRF. |
+| **Tugas 6** | Penerapan pola Django REST Framework pada bagian `Skill`: `SkillSerializer` dengan validasi `strip_tags` dan field star read-only, permission `IsPortfolioOwnerOrEditorOrReadOnly` untuk empat peran, API view berbasis fungsi di `/api/v1/skills/`, halaman kelola Skills yang menampilkan, mencari, menambah, memberi star, mengedit (`PATCH`), dan menghapus lewat API, filter kategori dan urutan star sebagai fitur tambahan, 31 test Skill termasuk pemeriksaan CSRF, serta GitHub Actions CI. |
 | **Tugas berikutnya** | Akan ditambahkan pada bagian ini beserta perubahan fitur, konsep yang dipelajari, dan catatan implementasinya. |
 
 ### Timeline Implementasi
@@ -446,10 +446,12 @@ python manage.py check
         ↓
 python manage.py migrate (jika ada perubahan model)
         ↓
-python manage.py test
+python manage.py test main
         ↓
 python manage.py runserver
 ```
+
+Perintah yang sama dijalankan otomatis oleh GitHub Actions pada setiap `push` dan *pull request* ke `main` (lihat poin 8 pada Catatan Implementasi Tugas 6). Memakai `test main`, bukan `test`, supaya skrip Selenium lokal tidak ikut dijalankan.
 
 ---
 
@@ -1002,11 +1004,12 @@ Pola Tutorial 7 saya terapkan pada `Skill`, yaitu bagian yang saya kerjakan send
 | Berkas | Isi |
 | --- | --- |
 | `main/serializers.py` | `SkillSerializer`: `fields` eksplisit, `validate_name` dan `validate_category`, tiga field star read-only |
-| `main/api_views.py` | `skill_list` (GET, POST, `?name=`), `skill_detail` (GET, PUT, PATCH, DELETE), `skill_star` (POST) |
+| `main/api_views.py` | `skill_list` (GET, POST, `?name=`, `?category=`, `?ordering=`), `skill_detail` (GET, PUT, PATCH, DELETE), `skill_star` (POST) |
 | `main/api_urls.py` | `api:skill-list`, `api:skill-detail`, `api:skill-star` di bawah `/api/v1/skills/` |
 | `templates/skills_manage.html` | Halaman kelola yang memakai API baru |
 | `templates/components/skill_edit_modal.html` | Modal edit yang mengirim `PATCH` |
-| `main/tests_api_skills.py` | 25 test: 22 `APITestCase` untuk API dan 3 untuk halaman |
+| `main/tests_api_skills.py` | 31 test: 27 `APITestCase` untuk API dan 4 untuk halaman |
+| `.github/workflows/ci.yml` | GitHub Actions: `check`, `makemigrations --check`, dan `test main` pada setiap push dan PR |
 
 **2. Hak akses empat peran di API**
 
@@ -1023,7 +1026,7 @@ Permission memakai `IsPortfolioOwnerOrEditorOrReadOnly` dari Tutorial 7, yang se
 
 | Method | Endpoint | Tindakan | Status |
 | --- | --- | --- | --- |
-| GET | `/api/v1/skills/` | Daftar; `?name=` untuk mencari | 200 |
+| GET | `/api/v1/skills/` | Daftar; `?name=` mencari, `?category=` memfilter (tepat, tidak peka huruf besar), `?ordering=name` (bawaan) atau `stars` (star terbanyak dulu) | 200, 400 untuk `ordering` tidak dikenal |
 | POST | `/api/v1/skills/` | Tambah skill (pemilik) | 201, 400, 403 |
 | GET | `/api/v1/skills/<uuid>/` | Detail | 200, 404 |
 | PUT / PATCH | `/api/v1/skills/<uuid>/` | Ubah (Editor atau pemilik) | 200, 400, 403, 404 |
@@ -1034,17 +1037,20 @@ Pencarian yang tidak menemukan apa pun mengembalikan `[]` dengan status 200, kar
 
 **4. Halaman Skill**
 
-`/skills/manage/` sekarang memuat, mencari, menambah, memberi star, mengedit, dan menghapus skill lewat `/api/v1/skills/` tanpa reload. Semua request tulis melewati satu helper, `writeSkill(url, method, payload)`, yang mengirim JSON beserta header `X-CSRFToken`, dan membaca error serializer (400) maupun `detail` (403) menjadi pesan toast. Tombol star, edit, dan hapus memakai *event delegation* pada `<tbody>`. Setelah star, hanya baris yang bersangkutan dirender ulang. Tombol Edit membuka modal yang diisi dari data baris, lalu mengirim `PATCH`; modal ini hanya dirender untuk Editor dan superuser. Baris tetap dirakit dengan `createElement` dan `textContent`, sehingga nilai teks tidak pernah ditafsirkan sebagai HTML. Jalur lama (`get_skills_json`, `create_skill_ajax`, `update_skill`, `delete_skill`, `toggle_skill_star`) saya pertahankan, begitu pula star pada landing page yang masih memakai form biasa.
+`/skills/manage/` sekarang memuat, mencari, memfilter kategori, mengurutkan, menambah, memberi star, mengedit, dan menghapus skill lewat `/api/v1/skills/` tanpa reload. Semua request tulis melewati satu helper, `writeSkill(url, method, payload)`, yang mengirim JSON beserta header `X-CSRFToken`, dan membaca error serializer (400) maupun `detail` (403) menjadi pesan toast. Tombol star, edit, dan hapus memakai *event delegation* pada `<tbody>`. Setelah star, hanya baris yang bersangkutan dirender ulang. Tombol Edit membuka modal yang diisi dari data baris, lalu mengirim `PATCH`; modal ini hanya dirender untuk Editor dan superuser. Baris tetap dirakit dengan `createElement` dan `textContent`, sehingga nilai teks tidak pernah ditafsirkan sebagai HTML. Dua dropdown (kategori dan urutan) adalah fitur tambahan di luar instruksi: pilihan kategori diisi dari data yang dikembalikan API, dan mengganti dropdown langsung memanggil ulang `GET /api/v1/skills/` dengan parameter yang sesuai. Jalur lama (`get_skills_json`, `create_skill_ajax`, `update_skill`, `delete_skill`, `toggle_skill_star`) saya pertahankan, begitu pula star pada landing page yang masih memakai form biasa.
 
 **5. Pengujian**
 
-`python manage.py test main` menjalankan 68 test dan semuanya lulus (43 test sebelumnya ditambah 25 test Skill). Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`; setelah dikembalikan, semuanya lulus lagi.
+`python manage.py test main` menjalankan 74 test dan semuanya lulus (43 test sebelumnya ditambah 31 test Skill). Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`; setelah dikembalikan, semuanya lulus lagi.
+
+Selain test otomatis, perilaku JavaScript di browser saya periksa dengan skrip Selenium sementara (Chrome *headless* terhadap `StaticLiveServerTestCase`) yang memakai session login sungguhan untuk tiap peran. Enam skenarionya lulus: pengunjung hanya melihat tabel dan tautan login; pengguna biasa menekan star dua kali tanpa reload halaman (penanda `window.__marker` tetap ada); Editor mengubah kategori lewat modal dan nama tetap utuh karena `PATCH`; Editor yang mengirim `<b></b>` melihat toast "tidak boleh kosong" dan database tidak berubah; pemilik menambah lalu menghapus skill; pencarian, filter kategori, dan urutan star bekerja. Skrip itu sengaja tidak saya commit, karena butuh Chrome terpasang dan akan membuat `test main` tidak lagi berjalan di mesin mana pun. Dua kegagalan awalnya berasal dari skrip itu sendiri (elemen baris yang sudah dirender ulang, dan id field modal edit yang salah ketik), bukan dari aplikasi.
 
 Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memakai nama skill unik dan membandingkan jumlah dengan nilai awal, bukan angka mutlak. Test pertama saya sempat gagal delapan kali (`13 != 1`) karena asumsi yang salah ini, dan sumber masalahnya ada di test, bukan di kode produksi.
 
 **6. Keterbatasan yang saya sadari**
 
-- Test memeriksa sisi server dan isi HTML kerangka halaman, tetapi perilaku JavaScript di browser (modal edit, toast, perubahan baris setelah star) tidak tercakup test otomatis dan perlu dicoba langsung.
+- Perilaku JavaScript di browser sudah diperiksa dengan skrip Selenium sementara, tetapi skrip itu tidak ada di repository, sehingga CI hanya menjalankan test sisi server. Kalau JavaScript halaman berubah, pemeriksaan browser harus diulang.
+- Daftar kategori pada dropdown dibangun dari skill yang pernah dimuat. Kategori yang baru ditambahkan lewat tab lain baru muncul setelah halaman dimuat ulang.
 - Pesan 403 pada endpoint Skill ditulis dalam bahasa Indonesia lewat atribut `message` pada `IsPortfolioOwnerOrEditorOrReadOnly`, supaya toast di halaman mudah dibaca. Endpoint star memakai `IsAuthenticated` bawaan DRF, sehingga penolakannya untuk pengunjung masih berbahasa Inggris; halaman tidak pernah memicunya karena pengunjung hanya melihat tautan ke login.
 - Star pada landing page (`#skills`) masih memakai form POST ke `toggle_skill_star`, sehingga memuat ulang halaman. Yang memakai API hanya halaman `/skills/manage/`.
 
@@ -1060,6 +1066,14 @@ Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memak
 | Nama berisi spasi atau hanya tag HTML | 400, toast berisi pesan serializer |
 | `POST` ke API tanpa header `X-CSRFToken` (session login) | 403 |
 | Membuka `/api/v1/skills/` di browser | Browsable API tampil |
+| Memilih "Star terbanyak" lalu satu kategori | `GET /api/v1/skills/?ordering=stars&category=...`, hanya skill kategori itu, star terbanyak di atas |
+| `GET /api/v1/skills/?ordering=created_at` | 400 berisi pilihan yang valid |
+
+**8. CI (GitHub Actions)**
+
+Berkas `.github/workflows/ci.yml` berjalan pada setiap `push` dan *pull request* ke `main` di Ubuntu dengan Python 3.11. Langkahnya: pasang `requirements.txt` (dengan cache pip), `python manage.py check`, `python manage.py makemigrations --check --dry-run` (menggagalkan build jika ada perubahan model tanpa migrasi), lalu `python manage.py test main`. `SECRET_KEY` diisi nilai palsu khusus CI karena test memakai SQLite dan tidak memanggil layanan luar, sehingga tidak ada secret asli di repository. Run yang tertimpa push baru pada branch yang sama dibatalkan otomatis (`concurrency`), dan izin token dibatasi `contents: read`.
+
+Saya tidak memasang CD otomatis ke PWS. Awalnya saya menulis job *deploy*, tetapi `pws.cs.ui.ac.id` tidak dapat dijangkau dari luar jaringan kampus (`git ls-remote` ke remote `pws` gagal tersambung), sehingga runner GitHub juga tidak akan bisa mengaksesnya. Job itu saya hapus daripada menyisakan konfigurasi yang tidak pernah bekerja. Deploy ke PWS tetap manual lewat `git push pws`.
 
 ---
 
@@ -1121,6 +1135,22 @@ Saya tidak hanya menggunakan satu prompt besar untuk seluruh pengerjaan. Saya me
         ↓
 8. Rapikan solusi final + dokumentasikan pemahamannya
 ```
+
+### Log Prompting Tugas 6 (Claude Code)
+
+Pada Tugas 6 perencanaan dilakukan lebih dulu dengan Claude (chat), lalu eksekusi per branch dengan Claude Code. Berikut prompt saya yang menentukan arah pekerjaan, dikutip apa adanya, beserta dampaknya:
+
+| Prompt saya | Dampak |
+| --- | --- |
+| "coba baca ini dan assignment06.md yaa utk lanjtuin tugas ini" (disertai rencana lima branch dari chat sebelumnya) | AI membaca spesifikasi dan rencana, lalu mengerjakan branch serializer, API view, frontend, test, dan README satu per satu |
+| "okk gas" | Persetujuan atas rencana: star dipindahkan ke `skills_manage.html` dan `index.html` tidak diubah |
+| "jgn co authored claude ya kalau commit.." | Semua commit berikutnya tidak memuat trailer `Co-Authored-By`; keterlibatan AI saya jelaskan di README ini |
+| "loh, perbaiki apa yg perlu kamu perbaiki dong" | AI berhenti dengan daftar "yang masih kamu pegang"; setelah teguran ini pesan 403 diindonesiakan, test ditambah, dan README disesuaikan |
+| "Emg ga bole pilih bagian lain?" lalu "oh oke yauda skill aja" | AI menjelaskan syarat "Tugas 3 sampai 5, bukan model tutorial" dan membandingkan Project, Skill, Experience sebelum saya memutuskan tetap memakai Skill |
+| "pahami aja dulu, lets make a plan" | AI hanya membaca dan menyusun rencana, belum mengubah apa pun |
+| "kerjain aja dulu yaa, maksimalin sampe nilai 4" (sekaligus meminta CI/CD) | Ditambahkan GitHub Actions CI, fitur filter dan urutan, pengujian browser, serta dokumentasi AI ini |
+
+Riwayat lengkap percakapan tersimpan di sesi Claude Code saya; tabel di atas adalah ringkasan prompt yang mengubah keputusan.
 
 # Evaluasi Kritis terhadap AI
 
@@ -1202,6 +1232,26 @@ Dua branch, yaitu `feature/xss-protection` dan `feature/search-debounce`, belum 
 
 Seperti sebelumnya, ini kesalahan alur kerja saya, bukan kesalahan AI. Sejak itu saya memeriksa `git branch --merged` sebelum mengumpulkan tugas.
 
+### 13. Spesifikasi dan kenyataan database test bisa berbeda
+
+Petunjuk tugas menyebut database pengujian selalu kosong. Pada project ini ternyata tidak: migrasi data menyeed 12 skill. Test pertama yang ditulis AI mengasumsikan hanya ada satu skill, sehingga delapan test gagal dengan `13 != 1`. Kesalahannya ada di asumsi test, bukan di kode produksi. AI mengubahnya agar memakai nama skill yang unik dan membandingkan jumlah dengan nilai awal. Pelajarannya: asumsi dari teks tugas tetap perlu dicek terhadap project sendiri.
+
+### 14. AI berhenti terlalu cepat dan menyerahkan pekerjaan kembali
+
+Setelah test lulus, AI melaporkan pekerjaan selesai dan menyerahkan hal yang sebenarnya bisa ia kerjakan sendiri, yaitu pesan 403 berbahasa Inggris. Saya harus menegur ("perbaiki apa yg perlu kamu perbaiki dong") sebelum itu dikerjakan. Saat itu AI juga sempat menyatakan tidak punya alat browser, padahal pengujian browser tetap bisa dilakukan lewat Selenium. Baru ketika saya meminta memaksimalkan hasil, pengujian browser itu dikerjakan.
+
+### 15. Verifikasi bisa tertinggal di belakang commit
+
+Dalam satu perintah AI menjalankan `manage.py check` dengan Python sistem (bukan virtual environment), perintah itu gagal karena `rest_framework` tidak ditemukan, tetapi `git commit` pada rangkaian perintah yang sama tetap berjalan. AI mengakuinya dan memverifikasi sesudahnya dengan Python dari `env/`; serializer terbukti benar, tetapi urutannya salah. Virtual environment proyek ternyata juga belum memasang `djangorestframework` walaupun ada di `requirements.txt`.
+
+### 16. Perintah shell panjang gagal dan harus diganti
+
+Dua kali AI menulis berkas besar lewat *heredoc* di Bash dan gagal dengan `unexpected EOF` karena ada tanda kutip tunggal di dalam teks. Karena gagal sebelum menulis apa pun, tidak ada berkas setengah jadi, tetapi AI harus memeriksa `git status` dulu lalu beralih ke alat tulis berkas. Lalu Claude Code menambahkan trailer `Co-Authored-By` otomatis pada commit; saya memintanya dihentikan, dan AI memeriksa riwayat dengan `git log --format=%B | grep -ci co-authored` bernilai 0.
+
+### 17. AI menulis konfigurasi untuk lingkungan yang tidak ia periksa
+
+Draf awal workflow CI berisi job *deploy* otomatis ke PWS. AI baru memeriksa keterjangkauan remote `pws` setelah draf jadi, dan ternyata tidak bisa diakses dari luar kampus. Job itu dihapus. Pelajarannya, konfigurasi CD tidak bisa dinilai benar hanya karena sintaksnya valid; targetnya harus bisa dijangkau.
+
 Tidak semua temuan bersifat negatif. Saat memindahkan `getCookie` ke berkas bersama, AI menemukan salinan lain dari fungsi yang sama di widget chat pada `base.html`, lalu melaporkannya tanpa mengubahnya karena berada di luar permintaan. Perilaku seperti inilah yang saya harapkan, melapor, bukan diam-diam memperluas cakupan pekerjaan.
 
 ---
@@ -1225,6 +1275,11 @@ AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan
 | Email tampil pada endpoint publik | — | Mengganti akun uji dengan username biasa lalu memeriksa ulang `/api/skills/` |
 | Bentuk respons AJAX menyimpang dari tutorial | Menulis versi awal dan mendaftar perbedaannya saat diminta membandingkan | Menyamakan seluruh bentuk respons dan cara JavaScript membacanya dengan tutorial |
 | Branch `xss-protection` dan `search-debounce` belum ter-*merge* | — | Ditemukan lewat `git log` dan `git branch --merged`, lalu di-*merge*; konflik `projects.html` diselesaikan dengan mempertahankan kedua fitur |
+| Test Skill gagal `13 != 1` | Menulis test dengan asumsi database kosong | Menelusuri penyebabnya (data migration menyeed 12 skill), lalu test memakai nama unik dan jumlah relatif terhadap nilai awal |
+| Pesan 403 Editor berbahasa Inggris | Menyerahkannya kembali sebagai "keterbatasan" | Meminta AI memperbaikinya; `message` ditambahkan pada permission dan ada test yang memeriksa isinya |
+| Commit memuat trailer `Co-Authored-By` | Menambahkannya secara otomatis | Meminta menghilangkannya, lalu memeriksa `git log` bernilai 0 trailer |
+| Job deploy PWS di CI | Menulis job yang tidak bisa berjalan | Mengecek `git ls-remote pws` (gagal tersambung), menghapus job, dan mendokumentasikan alasannya |
+| Perilaku JavaScript belum teruji | Menyatakan tidak punya alat browser | Meminta hasil maksimal; enam skenario browser dijalankan lewat Selenium untuk tiap peran, dan dua kegagalan awal terbukti salah skrip, bukan salah aplikasi |
 | `getCookie` hanya tersedia di halaman Projects | Memindahkannya ke `static/js/utils.js` dan melaporkan salinan lain di widget chat | Menguji ulang tambah project setelah pemindahan dan membiarkan salinan lokal widget chat tetap terpisah |
 
 ---
@@ -1260,6 +1315,8 @@ dibandingkan:
 ```
 
 Pelajaran terbesar dari Tutorial 5 dan Tugas 5 adalah bahwa pekerjaan yang dibagi menjadi banyak branch kecil memang memudahkan saya memeriksa hasil AI, tetapi menuntut disiplin pada hal yang bukan kode: memastikan setiap branch benar-benar masuk ke `main`, dan memverifikasi laporan AI lewat perintah Git atau pengujian langsung, bukan hanya mempercayai ringkasannya.
+
+Pada Tugas 6 pelajarannya bertambah: laporan "selesai" dari AI belum berarti selesai. Test hijau tidak membuktikan JavaScript di browser berjalan, dan konfigurasi yang sintaksnya benar (seperti job deploy) belum tentu bisa dijalankan. Karena itu pada Tugas 6 saya menuntut dua bukti tambahan: percobaan dengan sengaja merusak permission agar test gagal, dan klik-through otomatis di browser untuk setiap peran.
 
 AI saya gunakan sebagai **learning companion**. Keberhasilan suatu solusi tetap saya ukur dari implementasi dan pengujian pada project yang sebenarnya^^
 
