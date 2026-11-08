@@ -135,3 +135,21 @@ class SkillSerializer(serializers.ModelSerializer):
     def validate_category(self, value):
         """Strip HTML tags from the category."""
         return strip_tags(value).strip()
+
+
+class SkillBulkDeleteSerializer(serializers.Serializer):
+    """Validate the ``ids`` list sent to the bulk delete endpoint."""
+
+    MAX_IDS = 100
+
+    ids = serializers.ListField(
+        child=serializers.UUIDField(error_messages={"invalid": "ID skill tidak valid."}),
+        allow_empty=False,
+        max_length=MAX_IDS,
+        error_messages={
+            "required": "Daftar ID skill wajib diisi.",
+            "not_a_list": "ID skill harus berupa daftar.",
+            "empty": "Pilih setidaknya satu skill. Daftar ID tidak boleh kosong.",
+            "max_length": f"Terlalu banyak skill sekaligus (maksimal {MAX_IDS}).",
+        },
+    )
