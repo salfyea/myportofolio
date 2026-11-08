@@ -1,0 +1,11 @@
+[run]
+source = main,contacts,portofolio
+omit =
+    */migrations/*
+    */tests*.py
+    portofolio/asgi.py
+    portofolio/wsgi.py
+
+[report]
+show_missing = True
+skip_empty = True

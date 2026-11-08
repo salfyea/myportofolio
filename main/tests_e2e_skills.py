@@ -108,12 +108,11 @@ class SkillsPageBrowserTest(StaticLiveServerTestCase):
         return len(self.driver.find_elements(By.CSS_SELECTOR, selector))
 
     def toast_text(self):
-        def visible_toast(driver):
-            for element in driver.find_elements(By.CSS_SELECTOR, "[class*=toast]"):
-                if element.is_displayed() and element.text.strip():
-                    return element.text
-            return False
-        return self.wait(visible_toast)
+        # Read the message element itself: the toast container animates in, and
+        # its visible text can briefly be the title alone.
+        def message(driver):
+            return driver.find_element(By.ID, "toast-message").get_attribute("textContent").strip() or False
+        return self.wait(message)
 
     # --- roles -------------------------------------------------------------
 
