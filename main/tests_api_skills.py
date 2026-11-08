@@ -338,3 +338,23 @@ class SkillPageTest(APITestCase):
         self.assertIn('id="skills-category-select"', page)
         self.assertIn('id="skills-sort-select"', page)
         self.assertIn('value="stars"', page)
+
+    def test_page_loads_its_javascript_as_modules_not_inline(self):
+        page = self.get_page().content.decode()
+        self.assertIn('<script type="module" src="/static/js/skills/main.js">', page)
+        # The skills logic moved out of the template; only the shared chat widget keeps inline JS.
+        self.assertNotIn("writeSkill", page)
+        self.assertNotIn("buildSkillRowElement", page)
+
+    def test_page_config_reflects_the_role(self):
+        expected = {
+            None: ("false", "false", "false"),
+            "visitor": ("true", "false", "false"),
+            "editor": ("true", "true", "false"),
+            "owner": ("true", "true", "true"),
+        }
+        for username, (authenticated, can_edit, can_delete) in expected.items():
+            page = self.get_page(username).content.decode()
+            self.assertIn(f'data-authenticated="{authenticated}"', page, username)
+            self.assertIn(f'data-can-edit="{can_edit}"', page, username)
+            self.assertIn(f'data-can-delete="{can_delete}"', page, username)
