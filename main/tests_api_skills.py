@@ -358,3 +358,15 @@ class SkillPageTest(APITestCase):
             self.assertIn(f'data-authenticated="{authenticated}"', page, username)
             self.assertIn(f'data-can-edit="{can_edit}"', page, username)
             self.assertIn(f'data-can-delete="{can_delete}"', page, username)
+
+    def test_bulk_delete_controls_are_rendered_only_for_the_owner(self):
+        expected = {None: False, "visitor": False, "editor": False, "owner": True}
+        for username, has_controls in expected.items():
+            page = self.get_page(username).content.decode()
+            self.assertEqual('id="skills-select-all"' in page, has_controls, username)
+            self.assertEqual('id="bulk-delete-modal"' in page, has_controls, username)
+            self.assertEqual('id="bulk-delete-open"' in page, has_controls, username)
+
+    def test_page_config_includes_the_bulk_delete_endpoint(self):
+        page = self.get_page("owner").content.decode()
+        self.assertIn(f'data-bulk-delete-url="{reverse("api:skill-bulk-delete")}"', page)
