@@ -1246,7 +1246,7 @@ Dalam satu perintah AI menjalankan `manage.py check` dengan Python sistem (bukan
 
 ### 16. Perintah shell panjang gagal dan harus diganti
 
-Dua kali AI menulis berkas besar lewat *heredoc* di Bash dan gagal dengan `unexpected EOF` karena ada tanda kutip tunggal di dalam teks. Karena gagal sebelum menulis apa pun, tidak ada berkas setengah jadi, tetapi AI harus memeriksa `git status` dulu lalu beralih ke alat tulis berkas. Lalu Claude Code menambahkan trailer `Co-Authored-By` otomatis pada commit; saya memintanya dihentikan, dan AI memeriksa riwayat dengan `git log --format=%B | grep -ci co-authored` bernilai 0.
+Dua kali AI menulis berkas besar lewat *heredoc* di Bash dan gagal dengan `unexpected EOF` karena ada tanda kutip tunggal di dalam teks. Karena gagal sebelum menulis apa pun, tidak ada berkas setengah jadi, tetapi AI harus memeriksa `git status` dulu lalu beralih ke alat tulis berkas. Selain itu, bawaan Claude Code menyarankan trailer `Co-Authored-By` pada commit; saya meminta trailer itu tidak dipakai, dan AI memeriksa riwayat dengan `git log --format=%B | grep -ci co-authored` bernilai 0.
 
 ### 17. AI menulis konfigurasi untuk lingkungan yang tidak ia periksa
 
@@ -1277,7 +1277,7 @@ AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan
 | Branch `xss-protection` dan `search-debounce` belum ter-*merge* | — | Ditemukan lewat `git log` dan `git branch --merged`, lalu di-*merge*; konflik `projects.html` diselesaikan dengan mempertahankan kedua fitur |
 | Test Skill gagal `13 != 1` | Menulis test dengan asumsi database kosong | Menelusuri penyebabnya (data migration menyeed 12 skill), lalu test memakai nama unik dan jumlah relatif terhadap nilai awal |
 | Pesan 403 Editor berbahasa Inggris | Menyerahkannya kembali sebagai "keterbatasan" | Meminta AI memperbaikinya; `message` ditambahkan pada permission dan ada test yang memeriksa isinya |
-| Commit memuat trailer `Co-Authored-By` | Menambahkannya secara otomatis | Meminta menghilangkannya, lalu memeriksa `git log` bernilai 0 trailer |
+| Trailer `Co-Authored-By` pada commit | Bawaan Claude Code menyarankannya | Meminta menghilangkannya, lalu memeriksa `git log` bernilai 0 trailer |
 | Job deploy PWS di CI | Menulis job yang tidak bisa berjalan | Mengecek `git ls-remote pws` (gagal tersambung), menghapus job, dan mendokumentasikan alasannya |
 | Perilaku JavaScript belum teruji | Menyatakan tidak punya alat browser | Meminta hasil maksimal; enam skenario browser dijalankan lewat Selenium untuk tiap peran, dan dua kegagalan awal terbukti salah skrip, bukan salah aplikasi |
 | `getCookie` hanya tersedia di halaman Projects | Memindahkannya ke `static/js/utils.js` dan melaporkan salinan lain di widget chat | Menguji ulang tambah project setelah pemindahan dan membiarkan salinan lokal widget chat tetap terpisah |
