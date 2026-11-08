@@ -48,6 +48,10 @@ DEBUG = os.getenv('DEBUG', 'False' if PRODUCTION else 'True').lower() == 'true'
 SESSION_COOKIE_SECURE = PRODUCTION
 CSRF_COOKIE_SECURE = PRODUCTION
 
+# Tell browsers to keep using HTTPS for an hour. Deliberately short and without
+# subdomains or preload, so a mistake is easy to undo.
+SECURE_HSTS_SECONDS = 3600 if PRODUCTION else 0
+
 
 # Application definition
 
@@ -183,4 +187,6 @@ REST_FRAMEWORK = {
     },
     # Behind the production proxy the real client is the last X-Forwarded-For hop.
     "NUM_PROXIES": 1 if PRODUCTION else None,
+    # Indonesian messages for login, 404, 405, 429 and unreadable bodies.
+    "EXCEPTION_HANDLER": "main.api_errors.exception_handler",
 }
