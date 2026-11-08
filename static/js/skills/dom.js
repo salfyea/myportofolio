@@ -97,10 +97,23 @@ function buildDeleteControls(skill) {
 }
 
 // permissions: { isAuthenticated, canEdit, canDelete, loginUrl }
-export function buildSkillRow(skill, permissions) {
+// selected: whether the row's bulk-delete checkbox starts checked.
+export function buildSkillRow(skill, permissions, selected = false) {
     const row = document.createElement('tr');
     row.id = 'skill-' + skill.id;
     row.dataset.skill = JSON.stringify(skill);
+
+    if (permissions.canDelete) {
+        const selectCell = createElement('td', 'skills-table__select');
+        const checkbox = createElement('input', 'skill-select');
+        checkbox.type = 'checkbox';
+        checkbox.value = skill.id;
+        checkbox.checked = selected;
+        checkbox.dataset.action = 'select';
+        checkbox.setAttribute('aria-label', 'Pilih ' + skill.name);
+        selectCell.appendChild(checkbox);
+        row.appendChild(selectCell);
+    }
 
     row.appendChild(createElement('td', '', skill.name));
     row.appendChild(createElement('td', '', skill.category));

@@ -93,8 +93,9 @@ class SkillsPageBrowserTest(StaticLiveServerTestCase):
     def rows(self):
         for _ in range(5):
             try:
+                # The owner's rows start with a checkbox cell, so skip it to reach the name.
                 return [
-                    row.find_elements(By.TAG_NAME, "td")[0].text
+                    row.find_element(By.CSS_SELECTOR, "td:not(.skills-table__select)").text
                     for row in self.driver.find_elements(By.CSS_SELECTOR, "#skills-body tr")
                 ]
             except StaleElementReferenceException:
@@ -235,3 +236,101 @@ class SkillsPageBrowserTest(StaticLiveServerTestCase):
         time.sleep(1.5)
         self.assertEqual(self.alpha.starred_by.count(), 1)
         self.assertEqual(self.star_button(self.alpha).text, "★ 1")
+
+    # --- bulk delete -------------------------------------------------------
+
+    def click_when_on_top(self, element):
+        """Click only once nothing covers the element and its position has settled."""
+        script = (
+            "const r = arguments[0].getBoundingClientRect();"
+            "if (!r.width) return false;"
+            "return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === arguments[0];"
+        )
+        self.wait(lambda d: d.execute_script(script, element))
+        time.sleep(0.2)
+        element.click()
+
+    def tick(self, skill):
+        box = self.driver.find_element(By.CSS_SELECTOR, f"#skill-{skill.id} input[data-action=select]")
+        # Centre it first: a floating widget at the bottom of the window can cover the last rows.
+        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'})", box)
+        self.click_when_on_top(box)
+
+    def bulk_count_text(self):
+        return self.driver.find_element(By.ID, "bulk-count").text
+
+    def test_only_the_owner_sees_bulk_controls(self):
+        for username in (None, "visitor", "editor"):
+            self.open_as(username)
+            self.assertEqual(self.count(".skill-select, #skills-select-all, #bulk-delete-open"), 0, username)
+        self.open_as("owner")
+        self.assertEqual(self.count(".skill-select"), 2)
+        self.assertFalse(self.driver.find_element(By.ID, "bulk-delete-open").is_enabled())
+
+    def test_owner_bulk_deletes_the_ticked_skills_after_confirming(self):
+        gamma = Skill.objects.create(name="Gamma", icon_url="https://x.io/g.svg", category="Tool")
+        self.open_as("owner")
+        self.tick(self.alpha)
+        self.tick(gamma)
+        self.assertEqual(self.bulk_count_text(), "2 dipilih")
+        self.driver.find_element(By.ID, "bulk-delete-open").click()
+        confirm = self.driver.find_element(By.ID, "bulk-delete-confirm")
+        self.wait(lambda d: confirm.is_displayed())
+        self.assertIn("2 skill", self.driver.find_element(By.ID, "bulk-delete-message").text)
+        self.click_when_on_top(confirm)
+        self.wait(lambda d: self.rows() == ["Beta"])
+        self.assertEqual(sorted(Skill.objects.values_list("name", flat=True)), ["Beta"])
+        self.assertIn("2 skill berhasil dihapus", self.toast_text())
+        self.assertEqual(self.bulk_count_text(), "0 dipilih")
+
+    def test_cancelling_the_confirmation_deletes_nothing(self):
+        self.open_as("owner")
+        self.tick(self.alpha)
+        self.driver.find_element(By.ID, "bulk-delete-open").click()
+        cancel = self.driver.find_element(By.CSS_SELECTOR, "#bulk-delete-modal .button-secondary")
+        self.wait(lambda d: cancel.is_displayed())
+        self.click_when_on_top(cancel)
+        self.wait(lambda d: not self.driver.find_element(By.ID, "bulk-delete-confirm").is_displayed())
+        self.assertEqual(Skill.objects.count(), 2)
+
+    def test_select_all_follows_the_individual_boxes(self):
+        self.open_as("owner")
+        select_all = self.driver.find_element(By.ID, "skills-select-all")
+        select_all.click()
+        self.assertEqual(self.bulk_count_text(), "2 dipilih")
+        self.assertEqual(self.count(".skill-select:checked"), 2)
+        self.tick(self.beta)
+        self.assertEqual(self.bulk_count_text(), "1 dipilih")
+        self.assertTrue(self.driver.execute_script("return arguments[0].indeterminate", select_all))
+        self.tick(self.beta)
+        self.assertTrue(select_all.is_selected())
+
+    def test_changing_the_view_clears_the_selection_so_hidden_rows_are_safe(self):
+        self.open_as("owner")
+        self.driver.find_element(By.ID, "skills-select-all").click()
+        self.assertEqual(self.bulk_count_text(), "2 dipilih")
+        Select(self.driver.find_element(By.ID, "skills-category-select")).select_by_value("Lang")
+        self.wait(lambda d: self.rows() == ["Alpha"])
+        self.assertEqual(self.bulk_count_text(), "0 dipilih")
+        self.assertFalse(self.driver.find_element(By.ID, "bulk-delete-open").is_enabled())
+
+    def test_a_ticked_row_stays_ticked_after_starring_it(self):
+        self.open_as("owner")
+        self.tick(self.alpha)
+        self.star_button(self.alpha).click()
+        self.wait(lambda d: self.star_button(self.alpha).text == "★ 1")
+        box = self.driver.find_element(By.CSS_SELECTOR, f"#skill-{self.alpha.id} input[data-action=select]")
+        self.assertTrue(box.is_selected())
+        self.assertEqual(self.bulk_count_text(), "1 dipilih")
+
+    def test_server_rejection_of_a_bulk_delete_is_shown_and_keeps_the_rows(self):
+        self.open_as("owner")
+        self.tick(self.alpha)
+        self.driver.execute_script(FAILING_POST)
+        self.driver.find_element(By.ID, "bulk-delete-open").click()
+        confirm = self.driver.find_element(By.ID, "bulk-delete-confirm")
+        self.wait(lambda d: confirm.is_displayed())
+        self.click_when_on_top(confirm)
+        self.assertIn("Ditolak oleh server.", self.toast_text())
+        self.assertEqual(Skill.objects.count(), 2)
+        self.assertTrue(confirm.is_enabled())

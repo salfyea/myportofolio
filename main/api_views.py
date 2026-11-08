@@ -1,5 +1,6 @@
 """REST API views for projects (Tutorial 07) and skills (Individual Assignment 6)."""
 
+from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -14,7 +15,9 @@ from main.models import Project, Skill
 from main.permissions import (
     IsPortfolioOwnerOrEditorOrReadOnly, IsPortfolioOwnerOrReadOnly,
 )
-from main.serializers import ProjectSerializer, SkillSerializer
+from main.serializers import (
+    ProjectSerializer, SkillBulkDeleteSerializer, SkillSerializer,
+)
 from main.throttles import ApiStarThrottle, ApiWriteThrottle
 
 
@@ -159,3 +162,22 @@ def skill_star(request, skill_id):
         skill.starred_by.add(request.user)
     serializer = SkillSerializer(skill, context={"request": request})
     return Response(serializer.data)
+
+
+@api_view(["POST"])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
+@throttle_classes([ApiWriteThrottle])
+def skill_bulk_delete(request):
+    """Delete several skills in one request (owner only) and report how many went.
+
+    Unknown and repeated ids are ignored instead of failing the whole request,
+    and the delete runs in one transaction so it either happens fully or not at all.
+    """
+    serializer = SkillBulkDeleteSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    with transaction.atomic():
+        _, per_model = Skill.objects.filter(pk__in=set(serializer.validated_data["ids"])).delete()
+
+    return Response({"deleted": per_model.get(Skill._meta.label, 0)})

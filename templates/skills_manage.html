@@ -58,6 +58,22 @@
             </button>
         </form>
 
+        {% if user.is_superuser %}
+            <div class="bulk-bar">
+                <span id="bulk-count" class="bulk-bar__count">0 dipilih</span>
+
+                <button
+                    type="button"
+                    id="bulk-delete-open"
+                    class="button button-danger"
+                    popovertarget="bulk-delete-modal"
+                    disabled
+                >
+                    Hapus terpilih
+                </button>
+            </div>
+        {% endif %}
+
         <div id="loading">
             <p class="empty-state">Memuat skill...</p>
         </div>
@@ -73,6 +89,15 @@
         <table id="skills-table" class="skills-table hide">
             <thead>
                 <tr>
+                    {% if user.is_superuser %}
+                        <th class="skills-table__select">
+                            <input
+                                type="checkbox"
+                                id="skills-select-all"
+                                aria-label="Pilih semua skill yang tampil"
+                            >
+                        </th>
+                    {% endif %}
                     <th>Nama</th>
                     <th>Kategori</th>
                     <th>Star</th>
@@ -93,6 +118,38 @@
     {% include "components/skill_edit_modal.html" %}
 {% endif %}
 
+{% if user.is_superuser %}
+    <div id="bulk-delete-modal" class="delete-modal" popover="auto">
+        <button
+            type="button"
+            class="delete-modal__backdrop"
+            popovertarget="bulk-delete-modal"
+            popovertargetaction="hide"
+            aria-label="Tutup"
+        ></button>
+
+        <div class="delete-modal__content">
+            <h2>Hapus skill terpilih?</h2>
+            <p id="bulk-delete-message"></p>
+
+            <div class="delete-modal__actions">
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    popovertarget="bulk-delete-modal"
+                    popovertargetaction="hide"
+                >
+                    Batal
+                </button>
+
+                <button type="button" id="bulk-delete-confirm" class="button button-danger">
+                    Ya, Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
 {# Guarantees the csrftoken cookie exists for regular users who only star. #}
 {% csrf_token %}
 
@@ -101,6 +158,7 @@
     id="skills-app"
     hidden
     data-list-url="{% url 'api:skill-list' %}"
+    data-bulk-delete-url="{% url 'api:skill-bulk-delete' %}"
     data-detail-url="{% url 'api:skill-detail' '00000000-0000-0000-0000-000000000000' %}"
     data-star-url="{% url 'api:skill-star' '00000000-0000-0000-0000-000000000000' %}"
     data-login-url="{% url 'main:login' %}"

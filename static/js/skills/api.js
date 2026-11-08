@@ -11,7 +11,7 @@ export function apiErrorMessage(data, status) {
     return messages.join(' ') || 'Terjadi kesalahan (status ' + status + ').';
 }
 
-export function createSkillsApi({ listUrl, detailUrlTemplate, starUrlTemplate }) {
+export function createSkillsApi({ listUrl, detailUrlTemplate, starUrlTemplate, bulkDeleteUrl }) {
     const urlFor = (template, id) => template.replace(ID_PLACEHOLDER, id);
 
     // Single entry point for every request that changes data.
@@ -66,5 +66,7 @@ export function createSkillsApi({ listUrl, detailUrlTemplate, starUrlTemplate })
         update: (id, payload) => write(urlFor(detailUrlTemplate, id), 'PATCH', payload),
         remove: id => write(urlFor(detailUrlTemplate, id), 'DELETE'),
         toggleStar: id => write(urlFor(starUrlTemplate, id), 'POST'),
+        // Resolves to {deleted: n}; the server ignores ids that no longer exist.
+        bulkDelete: ids => write(bulkDeleteUrl, 'POST', { ids: ids }),
     };
 }
