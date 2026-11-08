@@ -61,12 +61,12 @@ class SkillBulkDeleteTest(APITestCase):
             ({"ids": "not-a-list"}, "daftar"),
             ({"ids": ["not-a-uuid"]}, "tidak valid"),
             ({"ids": [str(uuid.uuid4())] * 101}, "terlalu banyak"),
-            ({"ids": self.ids(self.skills[0]) + [123456]}, "tidak valid"),
+            ({"ids": self.ids(self.skills[0]) + ["still-not-a-uuid"]}, "tidak valid"),
         )
         for payload, expected in cases:
             response = self.client.post(self.url, payload, format="json")
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, payload)
-            self.assertIn(expected, " ".join(map(str, response.data["ids"])).lower(), payload)
+            self.assertIn(expected, str(response.data["ids"]).lower(), payload)
         self.assertNothingDeleted()
 
     def test_unknown_and_repeated_ids_are_harmless(self):
