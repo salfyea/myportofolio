@@ -14,7 +14,7 @@ def load_settings(**env):
     code = (
         "import json; import portofolio.settings as s; "
         "print(json.dumps({'debug': s.DEBUG, 'session': s.SESSION_COOKIE_SECURE, "
-        "'csrf': s.CSRF_COOKIE_SECURE}))"
+        "'csrf': s.CSRF_COOKIE_SECURE, 'hsts': s.SECURE_HSTS_SECONDS}))"
     )
     clean = {k: v for k, v in os.environ.items() if k not in ("PRODUCTION", "DEBUG")}
     clean.update({"SECRET_KEY": "x", **env})
@@ -31,12 +31,14 @@ class ProductionSettingsTest(SimpleTestCase):
         self.assertFalse(loaded["debug"])
         self.assertTrue(loaded["session"])
         self.assertTrue(loaded["csrf"])
+        self.assertEqual(loaded["hsts"], 3600)
 
     def test_development_keeps_debug_on_and_cookies_usable_over_http(self):
         loaded = load_settings(PRODUCTION="False")
         self.assertTrue(loaded["debug"])
         self.assertFalse(loaded["session"])
         self.assertFalse(loaded["csrf"])
+        self.assertEqual(loaded["hsts"], 0)
 
     def test_debug_can_be_overridden_explicitly(self):
         self.assertFalse(load_settings(PRODUCTION="False", DEBUG="False")["debug"])

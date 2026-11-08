@@ -259,10 +259,31 @@ class AccountViewTest(RoleTestCase):
 
     def test_logout_ends_the_session_and_clears_the_cookie(self):
         self.login(self.visitor)
-        response = self.client.get(reverse("main:logout"))
+        response = self.client.post(reverse("main:logout"))
         self.assertRedirects(response, reverse("main:login"))
         self.assertNotIn("_auth_user_id", self.client.session)
         self.assertEqual(response.cookies["last_login"].value, "")
+
+    def test_logout_by_get_is_refused_so_a_link_or_image_cannot_log_you_out(self):
+        self.login(self.visitor)
+        response = self.client.get(reverse("main:logout"))
+        self.assertEqual(response.status_code, 405)
+        self.assertIn("_auth_user_id", self.client.session)
+
+    def test_logout_needs_a_csrf_token(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.visitor)
+        self.assertEqual(client.post(reverse("main:logout")).status_code, 403)
+        self.assertIn("_auth_user_id", client.session)
+
+    def test_nav_offers_logout_as_a_csrf_protected_form(self):
+        self.login(self.visitor)
+        page = self.client.get(reverse("main:show_main")).content.decode()
+        self.assertIn(f'action="{reverse("main:logout")}"', page)
+        self.assertIn('method="post"', page)
+        self.assertNotIn(f'<a href="{reverse("main:logout")}">', page)
 
 
 @override_settings(GEMINI_API_KEY="test-key")

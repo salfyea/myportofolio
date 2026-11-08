@@ -68,6 +68,7 @@ class ProjectForm(ModelForm):
         }
 
     def clean_title(self):
+        """Strip HTML tags and reject a title that is empty afterwards."""
         title = strip_tags(self.cleaned_data["title"]).strip()
 
         if not title:
@@ -76,9 +77,11 @@ class ProjectForm(ModelForm):
         return title
 
     def clean_category(self):
+        """Strip HTML tags from the category."""
         return strip_tags(self.cleaned_data["category"]).strip()
 
     def clean_description(self):
+        """Strip HTML tags from the description."""
         return strip_tags(self.cleaned_data["description"]).strip()
 
 
@@ -122,6 +125,7 @@ class SkillForm(ModelForm):
         }
 
     def clean_name(self):
+        """Strip HTML tags and reject a name that is empty afterwards."""
         name = strip_tags(self.cleaned_data["name"]).strip()
 
         if not name:
@@ -130,4 +134,5 @@ class SkillForm(ModelForm):
         return name
 
     def clean_category(self):
+        """Strip HTML tags from the category."""
         return strip_tags(self.cleaned_data["category"]).strip()

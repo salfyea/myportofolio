@@ -1,10 +1,11 @@
 """Database models for the portfolio app.
 
-Two entities are tracked:
+Three entities are tracked:
 
 - ``Experience``: a professional/academic experience shown on the
   Experience page.
 - ``Project``: a personal project shown on the Projects page.
+- ``Skill``: a skill or tool shown in the Skills section and managed via the API.
 """
 
 import uuid

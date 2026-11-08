@@ -14,6 +14,10 @@ Repositori ini digunakan untuk mengerjakan seluruh rangkaian tugas dan tutorial 
   <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="GitHub">
 </p>
 
+<p align="center">
+  <a href="https://github.com/salfyea/myportofolio/actions/workflows/ci.yml"><img src="https://github.com/salfyea/myportofolio/actions/workflows/ci.yml/badge.svg" alt="Status CI"></a>
+</p>
+
 [Identitas](#identitas-diri) · [Tentang Proyek](#tentang-proyek) · [Perkembangan](#perkembangan-proyek) · [Menjalankan Proyek](#menjalankan-proyek) · [Refleksi Mingguan](#refleksi-mingguan) · [Penggunaan AI](#penggunaan-ai)
 
 ---
@@ -98,7 +102,7 @@ Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
 | **Tugas 5** | Penerapan seluruh pola Tutorial 5 pada bagian `Skill`: tabel skill dimuat lewat AJAX beserta jumlah dan status star, pencarian berdasarkan nama dengan debouncing, tambah skill lewat modal dan `fetch` dengan respons 201, 400, dan 403, toast untuk keberhasilan maupun kegagalan, pembersihan input dengan `strip_tags`, serta pemindahan `getCookie` ke berkas JavaScript bersama. |
 | **Tutorial 6** | Latihan HTMX pada app terpisah `contacts`: model `Contact`, partial template, tambah, hapus, pencarian langsung dengan debouncing, dan edit di dalam baris tabel memakai atribut `hx-*`, ditambah tiga latihan (field `phone`, `hx-swap="beforeend"`, dan feedback lewat `hx-swap-oob`). |
 | **Tutorial 7** | Implementasi Django REST Framework pada `Project`: `ProjectSerializer` dengan validasi dan field star hasil perhitungan, permission class `IsPortfolioOwnerOrReadOnly` dan `IsPortfolioOwnerOrEditorOrReadOnly`, API view berbasis fungsi di bawah `/api/v1/`, endpoint star, halaman Projects yang memakai API baru, serta 13 test dengan `APITestCase` termasuk pemeriksaan CSRF. |
-| **Tugas 6** | Penerapan pola Django REST Framework pada bagian `Skill`: `SkillSerializer` dengan validasi `strip_tags` dan field star read-only, permission `IsPortfolioOwnerOrEditorOrReadOnly` untuk empat peran, API view berbasis fungsi di `/api/v1/skills/`, halaman kelola Skills yang menampilkan, mencari, menambah, memberi star, mengedit (`PATCH`), dan menghapus lewat API, filter kategori dan urutan star sebagai fitur tambahan, 31 test Skill termasuk pemeriksaan CSRF, GitHub Actions CI, penguatan keamanan (rate limiting, throttle API, pengaturan produksi), modul JavaScript dengan star optimistis, dan 164 test dengan coverage 99%. |
+| **Tugas 6** | Penerapan pola Django REST Framework pada bagian `Skill`: `SkillSerializer` dengan validasi `strip_tags` dan field star read-only, permission `IsPortfolioOwnerOrEditorOrReadOnly` untuk empat peran, API view berbasis fungsi di `/api/v1/skills/`, halaman kelola Skills yang menampilkan, mencari, menambah, memberi star, mengedit (`PATCH`), dan menghapus lewat API, filter kategori dan urutan star sebagai fitur tambahan, 31 test Skill termasuk pemeriksaan CSRF, GitHub Actions CI, penguatan keamanan (rate limiting, throttle API, pengaturan produksi), modul JavaScript dengan star optimistis, dan 185 test dengan coverage 99%. |
 | **Tugas berikutnya** | Akan ditambahkan pada bagian ini beserta perubahan fitur, konsep yang dipelajari, dan catatan implementasinya. |
 
 ### Timeline Implementasi
@@ -348,6 +352,16 @@ source env/bin/activate
 ```bash
 python -m pip install -r requirements.txt
 ```
+
+Untuk menjalankan test lengkap (termasuk Selenium dan laporan coverage), pasang dependensi pengembangan:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m coverage run manage.py test main contacts
+python -m coverage report
+```
+
+Test Selenium membutuhkan Google Chrome dan dilewati otomatis kalau Chrome tidak ada.
 
 ## 5. Siapkan Environment Variable
 
@@ -1045,7 +1059,7 @@ Pencarian yang tidak menemukan apa pun mengembalikan `[]` dengan status 200, kar
 
 **5. Pengujian**
 
-`python manage.py test main contacts` menjalankan 164 test dan semuanya lulus. Dari jumlah itu, 43 test berasal dari tutorial, 31 test untuk Skill, dan sisanya dari penguatan pada poin 9. Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`. Setelah dikembalikan, semuanya lulus lagi.
+`python manage.py test main contacts` menjalankan 185 test dan semuanya lulus. Dari jumlah itu, 43 test berasal dari tutorial, 31 test untuk Skill, dan sisanya dari penguatan pada poin 9 (keamanan, view lama, model, pesan error, dan test browser). Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`. Setelah dikembalikan, semuanya lulus lagi.
 
 Selain test otomatis, perilaku JavaScript di browser saya periksa dengan Selenium (Chrome *headless* terhadap `StaticLiveServerTestCase`, berkas `main/tests_e2e_skills.py`) yang memakai session login sungguhan untuk tiap peran. Sembilan skenarionya lulus. Pengunjung hanya melihat tabel dan tautan login. Pengguna biasa menekan star dua kali tanpa reload halaman (penanda `window.__marker` tetap ada). Editor mengubah kategori lewat modal dan nama tetap utuh karena `PATCH`, sedangkan Editor yang mengirim `<b></b>` melihat toast "tidak boleh kosong" dan database tidak berubah. Pemilik bisa menambah lalu menghapus skill, dan pencarian, filter kategori, serta urutan star bekerja. Tiga skenario lain memeriksa star optimistis. Tampilan berubah seketika sebelum server menjawab (fetch sengaja diperlambat), star yang ditolak server dikembalikan ke keadaan semula disertai toast, dan klik kedua saat permintaan masih berjalan diabaikan. Test ini ikut dijalankan di CI dan dilewati otomatis kalau Chrome tidak ada. Pada percobaan pertama, dua kegagalan berasal dari skripnya sendiri (elemen baris yang sudah dirender ulang, dan id field modal edit yang salah ketik), bukan dari aplikasi. Belakangan satu test toast sesekali gagal karena Selenium membaca teks toast saat animasinya baru menampilkan judul. Test lalu diubah agar membaca elemen pesan secara langsung, dan lulus tiga kali berturut-turut.
 
@@ -1055,7 +1069,6 @@ Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memak
 
 - Test browser bergantung pada Chrome. Di mesin tanpa Chrome test itu dilewati, sehingga hanya test sisi server yang berjalan.
 - Penghitung rate limit memakai cache memori lokal (`LocMemCache`). Kalau aplikasi dijalankan dengan beberapa proses `gunicorn`, setiap proses menghitung sendiri, jadi batas efektifnya sebanyak jumlah proses kali batas yang ditulis. Untuk satu proses angkanya tepat.
-- Tautan Logout masih memakai `GET`. Itu praktis, tetapi pada aplikasi yang lebih serius logout sebaiknya `POST` dengan token CSRF.
 - Daftar kategori pada dropdown dibangun dari skill yang pernah dimuat. Kategori yang baru ditambahkan lewat tab lain baru muncul setelah halaman dimuat ulang.
 - Pesan 403 pada endpoint Skill ditulis dalam bahasa Indonesia lewat atribut `message` pada `IsPortfolioOwnerOrEditorOrReadOnly`, supaya toast di halaman mudah dibaca. Endpoint star memakai `IsAuthenticated` bawaan DRF, sehingga penolakannya untuk pengunjung masih berbahasa Inggris, tetapi halaman tidak pernah memicunya karena pengunjung hanya melihat tautan ke login.
 - Star pada landing page (`#skills`) masih memakai form POST ke `toggle_skill_star`, sehingga memuat ulang halaman. Yang memakai API hanya halaman `/skills/manage/`.
@@ -1077,17 +1090,21 @@ Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memak
 
 **8. CI (GitHub Actions)**
 
-Berkas `.github/workflows/ci.yml` berjalan pada setiap `push` dan *pull request* ke `main` di Ubuntu dengan Python 3.11. Langkahnya: pasang `requirements-dev.txt` (dengan cache pip), `python manage.py check`, `python manage.py makemigrations --check --dry-run` (menggagalkan build jika ada perubahan model tanpa migrasi), lalu `python -m coverage run manage.py test main contacts` yang menjalankan seluruh test termasuk Selenium, dan terakhir `coverage report --fail-under=90` yang menggagalkan build kalau coverage turun di bawah 90%. Hasil terakhir 164 test dan coverage 99%. `SECRET_KEY` diisi nilai palsu khusus CI karena test memakai SQLite dan tidak memanggil layanan luar, sehingga tidak ada secret asli di repository. Run yang tertimpa push baru pada branch yang sama dibatalkan otomatis (`concurrency`), dan izin token dibatasi `contents: read`.
+Berkas `.github/workflows/ci.yml` berjalan pada setiap `push` dan *pull request* ke `main` di Ubuntu dengan Python 3.11. Langkahnya: pasang `requirements-dev.txt` (dengan cache pip), `python manage.py check`, `python manage.py makemigrations --check --dry-run` (menggagalkan build jika ada perubahan model tanpa migrasi), lalu `python -m coverage run manage.py test main contacts` yang menjalankan seluruh test termasuk Selenium, dan terakhir `coverage report --fail-under=90` yang menggagalkan build kalau coverage turun di bawah 90%. Hasil terakhir 185 test dan coverage 99%. `SECRET_KEY` diisi nilai palsu khusus CI karena test memakai SQLite dan tidak memanggil layanan luar, sehingga tidak ada secret asli di repository. Run yang tertimpa push baru pada branch yang sama dibatalkan otomatis (`concurrency`), dan izin token dibatasi `contents: read`.
 
 
 **9. Penguatan keamanan dan kualitas**
 
-Setelah fitur Skill selesai, saya mengaudit keseluruhan proyek terhadap rubrik penilaian (CRUD, interaktivitas, security, testing, Git). Hasilnya enam perbaikan, masing-masing dikerjakan di branch sendiri.
+Setelah fitur Skill selesai, saya mengaudit keseluruhan proyek terhadap deskripsi skor tertinggi pada rubrik penilaian (CRUD, interaktivitas, security, testing, Git, dokumentasi), bukan terhadap batas minimalnya. Hasilnya beberapa perbaikan, masing-masing dikerjakan di branch sendiri.
 
 - **Pengaturan produksi.** `DEBUG` sebelumnya di-*hardcode* `True`, sehingga halaman error produksi bisa membocorkan kode dan konfigurasi. Sekarang `DEBUG` mati secara bawaan saat `PRODUCTION=True`, dan cookie session serta CSRF hanya dikirim lewat HTTPS. Test memuat modul settings di proses terpisah untuk membuktikannya.
 - **Rate limiting.** Decorator `rate_limit` membatasi `/api/chat/` (setiap pesan memanggil Gemini yang berbayar) dan percobaan login serta registrasi, masing-masing 10 per menit. Pemakai yang login dihitung per akun, pengunjung per alamat IP. Di balik proxy hanya entri terakhir `X-Forwarded-For` yang dipercaya, karena entri sebelumnya bisa dipalsukan klien. Pada API, throttle DRF membatasi tulis (30 per menit) dan star (60 per menit) per akun, sementara membaca tetap bebas.
+- **Pesan error yang bisa dibaca.** `main/api_errors.py` mengganti teks bawaan DRF untuk login, 404, 405, 429, dan body yang rusak menjadi pesan berbahasa Indonesia (misalnya "Terlalu banyak permintaan. Coba lagi dalam 12 detik."), dan serializer Skill memberi pesan per field. Kode status tidak berubah, hanya `detail` yang diganti, jadi toast di halaman selalu menampilkan kalimat yang jelas.
+- **Logout lewat POST.** Sebelumnya logout adalah tautan `GET`, sehingga halaman mana pun bisa mengeluarkan pengunjung dengan sebuah gambar atau tautan. Sekarang logout berupa form dengan token CSRF, dan `GET` dijawab 405.
 - **Decorator kustom.** `superuser_required` menggantikan pemeriksaan `is_superuser` yang tadinya diulang di beberapa view.
-- **Modul contacts.** Sebelumnya siapa pun, termasuk pengunjung tanpa login, bisa menambah, mengubah, dan menghapus kontak. Sekarang hanya pemilik yang boleh menulis (403 untuk yang lain), tombol tulis disembunyikan dari non-pemilik, dan `ContactForm` memvalidasi input serta membuang tag HTML. Sebelumnya `POST` tanpa nama menghasilkan error 500.
+- **Modul contacts.** Tugas tidak menyebut modul ini, tetapi membiarkan siapa pun, termasuk pengunjung tanpa login, menambah, mengubah, dan menghapus kontak adalah kelemahan keamanan, sehingga saya menutupnya. Sekarang hanya pemilik yang boleh menulis (403 untuk yang lain), tombol tulis disembunyikan dari non-pemilik, dan `ContactForm` memvalidasi input serta membuang tag HTML. Sebelumnya `POST` tanpa nama menghasilkan error 500.
+- **Query teroptimasi dan teruji.** Daftar skill dan project memakai `prefetch_related`, dan urutan star memakai `annotate`. Test menghitung query dengan `CaptureQueriesContext` dan membuktikan jumlahnya tetap sama untuk 2 maupun 40 baris, sehingga tidak ada masalah N+1.
+- **Docstring.** Setiap API view, permission, throttle, validator, dan view contacts kini punya docstring yang menjelaskan perilakunya, termasuk parameter query yang diterima.
 - **Test.** Coverage naik dari 79% menjadi 99%. View lama (form, akun, CRUD Project dan Skill) kini teruji, dan `chat_with_ai` diuji dengan model Gemini yang di-*mock* sehingga tidak ada panggilan jaringan.
 - **JavaScript halaman Skill.** Kode yang tadinya satu blok `<script>` di template kini dipecah menjadi tiga modul ES (`api.js` untuk permintaan, `dom.js` untuk membangun baris, `main.js` untuk alur halaman). Konfigurasi dikirim lewat atribut `data-*`. Tombol star memakai pembaruan optimistis: baris berubah seketika, lalu diganti jawaban server, atau dikembalikan ke keadaan semula disertai toast kalau permintaan gagal.
 
@@ -1285,6 +1302,10 @@ Satu test Selenium lulus saat dijalankan sendiri tetapi sesekali gagal pada run 
 
 Rate limiting menyimpan penghitung di cache, dan cache itu dipakai bersama oleh semua test dalam satu proses. Tanpa penanganan, test lama bisa gagal dengan 429 hanya karena test sebelumnya sudah memakai jatah. AI menambahkan `cache.clear()` pada setiap `setUp` yang terdampak, lalu menjalankan seluruh suite sebelum commit untuk membuktikan tidak ada yang rusak.
 
+### 20. AI salah membaca rubrik penilaian
+
+Ketika saya menunjukkan rubrik, AI menyebut kondisi pada kolom skor 1 ("any user can access, edit, or delete any data") sebagai alasan untuk mengembalikan modul kontak ke keadaan terbuka. Itu keliru: kolom skor rendah menggambarkan hasil yang harus dihindari, bukan acuan. Saya mengoreksinya ("jgn ikutin yang nilai 1, tapi nilai 4"), dan modul kontak tetap dibatasi. Pelajarannya, AI perlu diberi tahu arah penilaiannya dengan jelas, dan saya perlu membaca sendiri alasan di balik tiap rekomendasi.
+
 Tidak semua temuan bersifat negatif. Saat memindahkan `getCookie` ke berkas bersama, AI menemukan salinan lain dari fungsi yang sama di widget chat pada `base.html`, lalu melaporkannya tanpa mengubahnya karena berada di luar permintaan. Perilaku seperti inilah yang saya harapkan, melapor, bukan diam-diam memperluas cakupan pekerjaan.
 
 ---
@@ -1316,6 +1337,8 @@ AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan
 | Modul contacts bisa diubah siapa saja | Menulis view tanpa pemeriksaan peran pada Tutorial 6 | Ditemukan saat membaca kode, lalu dibatasi untuk pemilik dengan test otorisasi dan validasi |
 | Test lama gagal 429 setelah rate limiting | Menambah fitur tanpa memikirkan cache bersama antar test | Seluruh suite dijalankan sebelum commit, lalu cache dibersihkan di `setUp` |
 | Test toast Selenium sesekali gagal | Menulis test yang bergantung pada animasi | Test diubah membaca elemen pesan dan dijalankan berulang kali sampai stabil |
+| Rekomendasi mengembalikan kontak ke keadaan terbuka | Membaca deskripsi skor 1 pada rubrik sebagai acuan | Saya mengoreksi arahnya ke deskripsi skor 4, lalu audit diulang dan modul kontak tetap dibatasi |
+| Pesan error API berbahasa Inggris | Mengandalkan teks bawaan DRF | Ditemukan saat audit UX toast, lalu ditambahkan `api_errors.py` dengan test yang gagal lebih dulu |
 | `getCookie` hanya tersedia di halaman Projects | Memindahkannya ke `static/js/utils.js` dan melaporkan salinan lain di widget chat | Menguji ulang tambah project setelah pemindahan dan membiarkan salinan lokal widget chat tetap terpisah |
 
 ---

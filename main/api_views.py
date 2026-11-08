@@ -23,6 +23,7 @@ from main.throttles import ApiStarThrottle, ApiWriteThrottle
 @permission_classes([IsPortfolioOwnerOrReadOnly])
 @throttle_classes([ApiWriteThrottle])
 def project_list(request):
+    """List projects (``?title=`` searches) or create one as the owner."""
     if request.method in ("GET", "HEAD"):
         projects = Project.objects.prefetch_related("starred_by").order_by("title", "id")
         title = request.query_params.get("title", "").strip()
@@ -44,6 +45,7 @@ def project_list(request):
 @permission_classes([IsPortfolioOwnerOrReadOnly])
 @throttle_classes([ApiWriteThrottle])
 def project_detail(request, project_id):
+    """Read, replace, partially update or delete one project."""
     project = get_object_or_404(
         Project.objects.prefetch_related("starred_by"), pk=project_id,
     )
@@ -69,6 +71,7 @@ def project_detail(request, project_id):
 @permission_classes([IsAuthenticated])
 @throttle_classes([ApiStarThrottle])
 def project_star(request, project_id):
+    """Toggle the logged-in user's star; the account always comes from the session."""
     project = get_object_or_404(Project, pk=project_id)
     if project.starred_by.filter(pk=request.user.pk).exists():
         project.starred_by.remove(request.user)
@@ -86,6 +89,11 @@ SKILL_ORDERINGS = ("name", "stars")
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 @throttle_classes([ApiWriteThrottle])
 def skill_list(request):
+    """List skills or create one as the owner.
+
+    Query parameters: ``name`` (contains), ``category`` (exact, ignoring case) and
+    ``ordering`` (``name`` or ``stars``). Two queries serve any number of skills.
+    """
     if request.method in ("GET", "HEAD"):
         skills = Skill.objects.prefetch_related("starred_by").order_by("name", "id")
         name = request.query_params.get("name", "").strip()
@@ -118,6 +126,7 @@ def skill_list(request):
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 @throttle_classes([ApiWriteThrottle])
 def skill_detail(request, skill_id):
+    """Read a skill, or update (Editor, owner) or delete (owner) it."""
     skill = get_object_or_404(Skill.objects.prefetch_related("starred_by"), pk=skill_id)
     if request.method in ("GET", "HEAD"):
         serializer = SkillSerializer(skill, context={"request": request})
@@ -141,6 +150,7 @@ def skill_detail(request, skill_id):
 @permission_classes([IsAuthenticated])
 @throttle_classes([ApiStarThrottle])
 def skill_star(request, skill_id):
+    """Toggle the logged-in user's star on a skill and return the fresh counts."""
     skill = get_object_or_404(Skill, pk=skill_id)
     # The starring account always comes from the session, never from the body.
     if skill.starred_by.filter(pk=request.user.pk).exists():

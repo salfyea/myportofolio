@@ -14,6 +14,7 @@ class ContactForm(forms.ModelForm):
         fields = ["name", "email", "phone"]
 
     def clean_name(self):
+        """Strip HTML tags and reject a name that is empty afterwards."""
         name = strip_tags(self.cleaned_data["name"]).strip()
 
         if not name:
@@ -22,4 +23,5 @@ class ContactForm(forms.ModelForm):
         return name
 
     def clean_phone(self):
+        """Strip HTML tags from the phone number."""
         return strip_tags(self.cleaned_data["phone"]).strip()
