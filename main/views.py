@@ -21,6 +21,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from main.decorators import rate_limit, superuser_required
 from main.forms import ProjectForm, SkillForm
 from main.models import Experience, Project, Skill
 
@@ -178,11 +179,9 @@ def show_projects(request):
 
 
 @login_required(login_url="/login/")
+@superuser_required
 def create_project(request):
     """Show and process the "add project" form."""
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
     form = ProjectForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -280,6 +279,7 @@ def get_skills_json(request):
 
 
 @require_POST
+@rate_limit("chat", json=True)
 def chat_with_ai(request):
     """Relay a visitor's message to Gemini and return its reply as JSON.
 
@@ -345,11 +345,9 @@ def show_skills_manage(request):
 
 
 @login_required(login_url="/login/")
+@superuser_required
 def create_skill(request):
     """Show and process the "add skill" form."""
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
     form = SkillForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -413,11 +411,9 @@ def update_skill(request, skill_id):
 
 
 @login_required(login_url="/login/")
+@superuser_required
 def delete_skill(request, skill_id):
     """Delete a skill on POST; any other method just redirects back."""
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
     skill = get_object_or_404(Skill, pk=skill_id)
 
     if request.method == "POST":
@@ -428,11 +424,9 @@ def delete_skill(request, skill_id):
 
 
 @login_required(login_url="/login/")
+@superuser_required
 def delete_project(request, project_id):
     """Delete a project on POST; any other method just redirects back."""
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
     project = get_object_or_404(Project, pk=project_id)
 
     if request.method == "POST":
@@ -472,6 +466,7 @@ def toggle_skill_star(request, skill_id):
     return redirect(f"{reverse('main:show_main')}#skills")
 
 
+@rate_limit("auth", methods=("POST",))
 def register_user(request):
     """Show and process the registration form for new visitor accounts."""
     form = UserCreationForm(request.POST or None)
@@ -488,6 +483,7 @@ def register_user(request):
     return render(request, "register.html", context)
 
 
+@rate_limit("auth", methods=("POST",))
 def login_user(request):
     """Show and process the login form, starting a session on success."""
     form = AuthenticationForm(request, data=request.POST or None)

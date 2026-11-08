@@ -1,6 +1,7 @@
 import uuid
 
 from django.contrib.auth.models import Group, User
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -10,6 +11,8 @@ from main.models import Project
 
 class ProjectAPITest(APITestCase):
     def setUp(self):
+        # Rate-limit counters live in the cache and would leak between tests.
+        cache.clear()
         self.owner = User.objects.create_superuser(
             username="owner", password="test-password", email="owner@example.com",
         )

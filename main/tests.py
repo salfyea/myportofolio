@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -10,6 +11,8 @@ from main.models import Experience, Project
 
 class MainTest(TestCase):
     def setUp(self):
+        # Rate-limit counters live in the cache and would leak between tests.
+        cache.clear()
         self.experience = Experience.objects.create(
             title="Asisten Dosen PBP",
             description="Membantu mahasiswa memahami pengembangan web.",
@@ -109,6 +112,8 @@ class MainTest(TestCase):
 
 class ProjectTest(TestCase):
     def setUp(self):
+        # Rate-limit counters live in the cache and would leak between tests.
+        cache.clear()
         self.project = Project.objects.create(
             title="Portfolio Django",
             description="Portfolio dinamis dengan Django.",

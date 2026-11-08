@@ -3,6 +3,7 @@
 import uuid
 
 from django.contrib.auth.models import Group, User
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -12,6 +13,8 @@ from main.models import Skill
 
 class SkillAPITest(APITestCase):
     def setUp(self):
+        # Rate-limit counters live in the cache and would leak between tests.
+        cache.clear()
         self.owner = User.objects.create_superuser(
             username="owner", password="test-password", email="owner@example.com",
         )
@@ -286,6 +289,8 @@ class SkillPageTest(APITestCase):
     """The management page is a shell that talks to the API with fetch()."""
 
     def setUp(self):
+        # Rate-limit counters live in the cache and would leak between tests.
+        cache.clear()
         self.editor = User.objects.create_user(username="editor", password="test-password")
         self.editor.groups.add(Group.objects.get_or_create(name="Editor")[0])
         self.visitor = User.objects.create_user(username="visitor", password="test-password")

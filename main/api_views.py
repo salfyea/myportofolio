@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import (
-    api_view, authentication_classes, permission_classes,
+    api_view, authentication_classes, permission_classes, throttle_classes,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,11 +15,13 @@ from main.permissions import (
     IsPortfolioOwnerOrEditorOrReadOnly, IsPortfolioOwnerOrReadOnly,
 )
 from main.serializers import ProjectSerializer, SkillSerializer
+from main.throttles import ApiStarThrottle, ApiWriteThrottle
 
 
 @api_view(["GET", "HEAD", "POST"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrReadOnly])
+@throttle_classes([ApiWriteThrottle])
 def project_list(request):
     if request.method in ("GET", "HEAD"):
         projects = Project.objects.prefetch_related("starred_by").order_by("title", "id")
@@ -40,6 +42,7 @@ def project_list(request):
 @api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrReadOnly])
+@throttle_classes([ApiWriteThrottle])
 def project_detail(request, project_id):
     project = get_object_or_404(
         Project.objects.prefetch_related("starred_by"), pk=project_id,
@@ -64,6 +67,7 @@ def project_detail(request, project_id):
 @api_view(["POST"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
+@throttle_classes([ApiStarThrottle])
 def project_star(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     if project.starred_by.filter(pk=request.user.pk).exists():
@@ -80,6 +84,7 @@ SKILL_ORDERINGS = ("name", "stars")
 @api_view(["GET", "HEAD", "POST"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
+@throttle_classes([ApiWriteThrottle])
 def skill_list(request):
     if request.method in ("GET", "HEAD"):
         skills = Skill.objects.prefetch_related("starred_by").order_by("name", "id")
@@ -111,6 +116,7 @@ def skill_list(request):
 @api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
+@throttle_classes([ApiWriteThrottle])
 def skill_detail(request, skill_id):
     skill = get_object_or_404(Skill.objects.prefetch_related("starred_by"), pk=skill_id)
     if request.method in ("GET", "HEAD"):
@@ -133,6 +139,7 @@ def skill_detail(request, skill_id):
 @api_view(["POST"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
+@throttle_classes([ApiStarThrottle])
 def skill_star(request, skill_id):
     skill = get_object_or_404(Skill, pk=skill_id)
     # The starring account always comes from the session, never from the body.
