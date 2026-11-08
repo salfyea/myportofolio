@@ -342,7 +342,9 @@ class SkillPageTest(APITestCase):
     def test_page_loads_its_javascript_as_modules_not_inline(self):
         page = self.get_page().content.decode()
         self.assertIn('<script type="module" src="/static/js/skills/main.js">', page)
-        self.assertNotIn("fetch(", page)
+        # The skills logic moved out of the template; only the shared chat widget keeps inline JS.
+        self.assertNotIn("writeSkill", page)
+        self.assertNotIn("buildSkillRowElement", page)
 
     def test_page_config_reflects_the_role(self):
         expected = {
