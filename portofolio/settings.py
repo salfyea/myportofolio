@@ -169,3 +169,18 @@ CSRF_TRUSTED_ORIGINS = [
     "https://salwa-alifia-myportofolio.pws.cs.ui.ac.id",
 ]
 
+# Requests allowed per window (max_requests, seconds); see main/decorators.py.
+RATE_LIMITS = {
+    "chat": (10, 60),  # every message costs a paid Gemini call
+    "auth": (10, 60),  # login and registration attempts
+}
+
+REST_FRAMEWORK = {
+    # Per-account budgets for requests that change data; see main/throttles.py.
+    "DEFAULT_THROTTLE_RATES": {
+        "api_write": "30/min",
+        "api_star": "60/min",
+    },
+    # Behind the production proxy the real client is the last X-Forwarded-For hop.
+    "NUM_PROXIES": 1 if PRODUCTION else None,
+}
