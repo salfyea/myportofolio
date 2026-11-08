@@ -260,7 +260,7 @@ class AccountViewTest(RoleTestCase):
     def test_logout_ends_the_session_and_clears_the_cookie(self):
         self.login(self.visitor)
         response = self.client.post(reverse("main:logout"))
-        self.assertRedirects(response, reverse("main:login"))
+        self.assertRedirects(response, reverse("main:show_main"))
         self.assertNotIn("_auth_user_id", self.client.session)
         self.assertEqual(response.cookies["last_login"].value, "")
 
