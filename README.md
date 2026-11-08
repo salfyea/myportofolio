@@ -88,10 +88,10 @@ Bagian ini akan terus diperbarui sampai akhir rangkaian tugas.
 | --- | --- |
 | **Tutorial 1** | Halaman About Me serta penghubungan view, URL, template, dan static files sesuai tutorial. |
 | **Tutorial 2** | Implementasi konsep MVT Django melalui model `Experience`, migration database, queryset pada view, template dinamis, routing URL, base template, serta unit testing. |
-| **Tugas 1** | Penambahan Experience, Featured Projects, dan Skills; pengembangan styling kartu; serta perbaikan layout mobile agar elemen tidak bertumpuk dan konten lebih mudah dibaca. |
+| **Tugas 1** | Penambahan Experience, Featured Projects, dan Skills, pengembangan styling kartu, serta perbaikan layout mobile agar elemen tidak bertumpuk dan konten lebih mudah dibaca. |
 | **Tugas 2** | Pengembangan Featured Projects berbasis database menggunakan model `Project`, migration, fixture, queryset, halaman Projects terpisah, navigasi, template dinamis dengan empty state, serta pengujian fitur. |
 | **Tutorial 3** | Pembuatan skeleton `base.html` sebagai root template, penerapan `ModelForm` untuk `Project`, serta implementasi create, update, delete, dan JSON delivery untuk `Project`. |
-| **Tugas 3** | Refactor template agar extend dari `base.html`; pembuatan model `Skill` menggantikan data Skills yang sebelumnya hardcoded; `ModelForm`, create, update, delete, JSON delivery, dan penampilan data hasil deserialisasi JSON secara langsung pada halaman kelola Skills. |
+| **Tugas 3** | Refactor template agar extend dari `base.html`, pembuatan model `Skill` yang menggantikan data Skills hardcoded, `ModelForm`, create, update, delete, JSON delivery, dan penampilan data hasil deserialisasi JSON secara langsung pada halaman kelola Skills. |
 | **Tutorial 4** | Implementasi autentikasi bawaan Django (register, login, logout), penanda status login pada navbar, cookie `last_login` beserta penghapusannya saat logout, pembatasan create dan delete `Project` untuk pemilik portofolio, fitur star pada `Project` menggunakan `ManyToManyField`, serta pengamanan endpoint JSON dengan natural key. |
 | **Tugas 4** | Penerapan pola autentikasi dan otorisasi pada bagian `Skill`: penambahan peran **Editor** melalui Django Group, pembatasan hak akses sisi server untuk empat peran, penyembunyian kontrol aksi pada template sesuai peran, fitur star pada `Skill`, serta penggantian proteksi kode rahasia dengan sistem otorisasi Django. |
 | **Tutorial 5** | Penerapan JavaScript dan AJAX pada halaman Projects: komponen notifikasi toast, pemuatan data proyek lewat Fetch API dengan JSON yang dirakit manual (termasuk jumlah dan status star), state loading, kosong, dan error, pencarian dengan debouncing, modal form tambah proyek, pengiriman form lewat AJAX dengan token CSRF, serta perlindungan XSS di sisi tampilan dan server. |
@@ -388,7 +388,7 @@ python manage.py createsuperuser
 
 Untuk menguji seluruh peran, daftarkan dua akun tambahan melalui halaman `/register/`:
 
-- satu akun dibiarkan sebagai **pengguna biasa**;
+- satu akun dibiarkan sebagai **pengguna biasa**
 - satu akun dijadikan **Editor** dengan cara masuk ke `/admin/` sebagai superuser, membuka **Users**, memilih akun tersebut, lalu memindahkan grup **Editor** ke kolom *Chosen groups* dan menyimpannya.
 
 Keanggotaan grup tersimpan di database, sedangkan `db.sqlite3` tidak ikut di-commit. Karena itu grup `Editor` dibuat lewat migration, tetapi pengisian anggotanya tetap dilakukan melalui Django Admin.
@@ -473,7 +473,7 @@ Perintah yang sama dijalankan otomatis oleh GitHub Actions pada setiap `push` da
 
    Pada versi revisi, kartu menggunakan tiga kolom di desktop, dua kolom pada lebar layar maksimal 900px, dan satu kolom pada lebar maksimal 600px. Untuk profil di mobile, urutannya menjadi nama, foto, kemudian bio dan informasi kontak. Nama diprioritaskan agar identitas langsung terlihat, sedangkan foto dibatasi ukurannya supaya tidak mendominasi layar. Urutan ini juga mengikuti urutan elemen dalam HTML. Navigasi dan metadata diberi kemampuan membungkus baris, sementara `minmax(0, ...)`, `min-width: 0`, dan `overflow-wrap` membantu mengendalikan konten di dalam grid.
 
-   Dasar evaluasi saya adalah keterbacaan dan prioritas informasi, bukan sekadar mengecilkan semua ukuran secara proporsional. Teks utama perlu tetap nyaman dibaca, tautan perlu mudah dipilih, dan pengguna tidak seharusnya harus menggulir horizontal untuk membaca kartu. Breakpoint tersebut merupakan keputusan desain yang perlu dibuktikan melalui pemeriksaan browser, bukan jaminan bahwa semua ukuran layar sudah sesuai. Evaluasi visual perlu dilakukan pada lebar seperti 375px, 768px, dan 1440px, serta saat teks diperbesar. Pada saat draf dokumentasi ini disusun, pemeriksaan yang tersedia baru mencakup struktur kode; hasil pengujian browser belum dicatat.
+   Dasar evaluasi saya adalah keterbacaan dan prioritas informasi, bukan sekadar mengecilkan semua ukuran secara proporsional. Teks utama perlu tetap nyaman dibaca, tautan perlu mudah dipilih, dan pengguna tidak seharusnya harus menggulir horizontal untuk membaca kartu. Breakpoint tersebut merupakan keputusan desain yang perlu dibuktikan melalui pemeriksaan browser, bukan jaminan bahwa semua ukuran layar sudah sesuai. Evaluasi visual perlu dilakukan pada lebar seperti 375px, 768px, dan 1440px, serta saat teks diperbesar. Pada saat draf dokumentasi ini disusun, pemeriksaan yang tersedia baru mencakup struktur kode, sedangkan hasil pengujian browser belum dicatat.
 
 3. **Batasan static web dan rencana pengembangan dinamis**
 
@@ -904,12 +904,12 @@ Jalur lama tidak saya hapus. `get_projects_json`, `create_project_ajax`, `create
 
 `ProjectSerializer` (di `main/serializers.py`) adalah `ModelSerializer` dengan daftar `fields` yang ditulis eksplisit, sehingga password atau email pengguna tidak mungkin ikut terkirim. Field `id` bersifat *read-only*. Tiga field hasil perhitungan, yaitu `star_count`, `is_starred`, dan `starred_by_names`, memakai `SerializerMethodField`, sehingga otomatis hanya dapat dibaca. `is_starred` dihitung dari `request` yang dibawa lewat `context`, dan bernilai `False` jika tidak ada request atau pengunjung belum login. Itu alasan view selalu mengirim `context={"request": request}`.
 
-Validasi memakai method `validate_<field>`: `validate_title` membuang tag dengan `strip_tags`, lalu menolak judul yang menjadi kosong; `validate_description` dan `validate_category` membuang tag. `URLField` dari model tetap menolak `javascript:alert(1)`. Aturan ini harus ada di serializer karena `ProjectSerializer` tidak menjalankan `ProjectForm.clean_title`: input lewat API memakai jalur validasi yang berbeda dari form.
+Validasi memakai method `validate_<field>`: `validate_title` membuang tag dengan `strip_tags`, lalu menolak judul yang menjadi kosong, sedangkan `validate_description` dan `validate_category` cukup membuang tag. `URLField` dari model tetap menolak `javascript:alert(1)`. Aturan ini harus ada di serializer karena `ProjectSerializer` tidak menjalankan `ProjectForm.clean_title`: input lewat API memakai jalur validasi yang berbeda dari form.
 
 Tiga bentuk data yang sering tertukar:
 
 - `request.data` adalah input mentah dari klien dan belum boleh dipercaya.
-- `.validated_data` adalah input yang lolos `is_valid()` dan sudah dibersihkan; field read-only diabaikan.
+- `.validated_data` adalah input yang lolos `is_valid()` dan sudah dibersihkan, dan field read-only diabaikan.
 - `.data` adalah representasi untuk klien (termasuk `id` dan field hasil perhitungan), dibaca setelah `.save()`.
 
 **3. Autentikasi, otorisasi, dan CSRF**
@@ -924,7 +924,7 @@ Kelas `IsPortfolioOwnerOrEditorOrReadOnly` (superuser boleh semua, anggota grup 
 
 | Method | Endpoint | Tindakan | Siapa yang boleh |
 | --- | --- | --- | --- |
-| GET | `/api/v1/projects/` | Daftar; `?title=` untuk mencari | Semua pengunjung |
+| GET | `/api/v1/projects/` | Daftar, `?title=` untuk mencari | Semua pengunjung |
 | POST | `/api/v1/projects/` | Tambah project | Pemilik (superuser) |
 | GET | `/api/v1/projects/<uuid>/` | Detail satu project | Semua pengunjung |
 | PUT / PATCH | `/api/v1/projects/<uuid>/` | Ubah project | Pemilik |
@@ -935,15 +935,15 @@ Status yang dikembalikan: **200** untuk baca dan ubah, **201** setelah membuat, 
 
 **5. Halaman Projects memakai API baru**
 
-JSON sekarang datar (`item.id`, `item.title`, `item.category`, `item.link`), bukan `item.pk` dan `item.fields`, dan `starred_by_names` berupa string, bukan list. Semua permintaan tulis melewati satu helper, `writeProject(url, method, payload)`, yang mengirim JSON, header `X-CSRFToken` dari `getCookie('csrftoken')`, dan membaca error serializer lewat `apiErrorMessage`; status 204 menghasilkan `null` sehingga `.json()` tidak dipanggil pada body kosong. Tombol star dan hapus memakai *event delegation* pada `#grid`, sehingga tetap bekerja setelah daftar dirender ulang. Tag `{% csrf_token %}` saya taruh di luar `<script>` agar cookie `csrftoken` selalu dibuat, termasuk untuk pengguna biasa yang hanya memberi star.
+JSON sekarang datar (`item.id`, `item.title`, `item.category`, `item.link`), bukan `item.pk` dan `item.fields`, dan `starred_by_names` berupa string, bukan list. Semua permintaan tulis melewati satu helper, `writeProject(url, method, payload)`, yang mengirim JSON, header `X-CSRFToken` dari `getCookie('csrftoken')`, dan membaca error serializer lewat `apiErrorMessage`. Status 204 menghasilkan `null` sehingga `.json()` tidak dipanggil pada body kosong. Tombol star dan hapus memakai *event delegation* pada `#grid`, sehingga tetap bekerja setelah daftar dirender ulang. Tag `{% csrf_token %}` saya taruh di luar `<script>` agar cookie `csrftoken` selalu dibuat, termasuk untuk pengguna biasa yang hanya memberi star.
 
-Tampilan Tutorial 5 saya pertahankan: kartu tetap dirakit dengan `createElement` dan `textContent` (bukan `innerHTML`), sehingga fungsi `escapeHtml` tidak diperlukan; modal hapus dan debounce 300 ms tetap ada; tautan Edit untuk Editor masih menuju halaman edit lama. URL gambar dan tautan hanya ditampilkan jika berskema `http` atau `https`, untuk data lama yang tersimpan sebelum serializer memvalidasinya.
+Tampilan Tutorial 5 saya pertahankan: kartu tetap dirakit dengan `createElement` dan `textContent` (bukan `innerHTML`), sehingga fungsi `escapeHtml` tidak diperlukan. Modal hapus dan debounce 300 ms tetap ada, dan tautan Edit untuk Editor masih menuju halaman edit lama. URL gambar dan tautan hanya ditampilkan jika berskema `http` atau `https`, untuk data lama yang tersimpan sebelum serializer memvalidasinya.
 
 **6. Pengujian**
 
 `main/tests_api.py` berisi 13 test `APITestCase` dari tutorial: daftar dan detail publik, pencarian, 404, penolakan tulis bagi tamu dan pengguna biasa (dengan memeriksa isi database, bukan hanya status), pembuatan oleh pemilik, validasi, `PATCH`/`PUT`/`DELETE`, star, field hasil perhitungan yang tidak bisa dipalsukan, *staff* dan Editor yang tidak boleh mengelola Projects, method yang salah, serta dua test CSRF. Hasilnya `Ran 13 tests ... OK`, dan `python manage.py test main` (43 test) juga lulus.
 
-Dua test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` karena `force_authenticate` memilih pengguna langsung tanpa melewati proses login maupun CSRF, sehingga tidak bisa membuktikan perlindungan CSRF berjalan. Saya juga mencoba eksperimen dari tutorial: ketika permission saya longgarkan menjadi selalu `True`, `test_guest_and_visitor_cannot_write` gagal dengan `201 != 403`; setelah dikembalikan, semua test lulus lagi.
+Dua test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` karena `force_authenticate` memilih pengguna langsung tanpa melewati proses login maupun CSRF, sehingga tidak bisa membuktikan perlindungan CSRF berjalan. Saya juga mencoba eksperimen dari tutorial: ketika permission saya longgarkan menjadi selalu `True`, `test_guest_and_visitor_cannot_write` gagal dengan `201 != 403`. Setelah dikembalikan, semua test lulus lagi.
 
 **7. Penyesuaian terhadap proyek saya**
 
@@ -957,7 +957,7 @@ Dua test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` karen
 | Skenario | Hasil yang diharapkan |
 | --- | --- |
 | Pengunjung membuka `/projects/` | Daftar tampil lewat `GET /api/v1/projects/`, tanpa tombol tambah dan hapus, tombol star berupa tautan ke login |
-| Pengguna biasa memberi lalu membatalkan star | `POST` berstatus 200; jumlah star bertambah lalu kembali, `is_starred` berganti |
+| Pengguna biasa memberi lalu membatalkan star | `POST` berstatus 200, jumlah star bertambah lalu kembali, dan `is_starred` berganti |
 | Superuser menambah project lewat modal | `POST` berstatus 201 dengan `X-CSRFToken`, modal tertutup, toast, daftar dimuat ulang tanpa reload |
 | Judul hanya berisi spasi atau tag HTML | 400 dengan pesan dari serializer, ditampilkan lewat toast |
 | Pengguna biasa memanggil `DELETE /api/v1/projects/<uuid>/` | 403 dan data di database tidak berubah |
@@ -1026,7 +1026,7 @@ Permission memakai `IsPortfolioOwnerOrEditorOrReadOnly` dari Tutorial 7, yang se
 
 | Method | Endpoint | Tindakan | Status |
 | --- | --- | --- | --- |
-| GET | `/api/v1/skills/` | Daftar; `?name=` mencari, `?category=` memfilter (tepat, tidak peka huruf besar), `?ordering=name` (bawaan) atau `stars` (star terbanyak dulu) | 200, 400 untuk `ordering` tidak dikenal |
+| GET | `/api/v1/skills/` | Daftar, `?name=` mencari, `?category=` memfilter (tepat, tidak peka huruf besar), `?ordering=name` (bawaan) atau `stars` (star terbanyak dulu) | 200, 400 untuk `ordering` tidak dikenal |
 | POST | `/api/v1/skills/` | Tambah skill (pemilik) | 201, 400, 403 |
 | GET | `/api/v1/skills/<uuid>/` | Detail | 200, 404 |
 | PUT / PATCH | `/api/v1/skills/<uuid>/` | Ubah (Editor atau pemilik) | 200, 400, 403, 404 |
@@ -1037,13 +1037,13 @@ Pencarian yang tidak menemukan apa pun mengembalikan `[]` dengan status 200, kar
 
 **4. Halaman Skill**
 
-`/skills/manage/` sekarang memuat, mencari, memfilter kategori, mengurutkan, menambah, memberi star, mengedit, dan menghapus skill lewat `/api/v1/skills/` tanpa reload. Semua request tulis melewati satu helper, `writeSkill(url, method, payload)`, yang mengirim JSON beserta header `X-CSRFToken`, dan membaca error serializer (400) maupun `detail` (403) menjadi pesan toast. Tombol star, edit, dan hapus memakai *event delegation* pada `<tbody>`. Setelah star, hanya baris yang bersangkutan dirender ulang. Tombol Edit membuka modal yang diisi dari data baris, lalu mengirim `PATCH`; modal ini hanya dirender untuk Editor dan superuser. Baris tetap dirakit dengan `createElement` dan `textContent`, sehingga nilai teks tidak pernah ditafsirkan sebagai HTML. Dua dropdown (kategori dan urutan) adalah fitur tambahan di luar instruksi: pilihan kategori diisi dari data yang dikembalikan API, dan mengganti dropdown langsung memanggil ulang `GET /api/v1/skills/` dengan parameter yang sesuai. Jalur lama (`get_skills_json`, `create_skill_ajax`, `update_skill`, `delete_skill`, `toggle_skill_star`) saya pertahankan, begitu pula star pada landing page yang masih memakai form biasa.
+`/skills/manage/` sekarang memuat, mencari, memfilter kategori, mengurutkan, menambah, memberi star, mengedit, dan menghapus skill lewat `/api/v1/skills/` tanpa reload. Semua request tulis melewati satu helper, `writeSkill(url, method, payload)`, yang mengirim JSON beserta header `X-CSRFToken`, dan membaca error serializer (400) maupun `detail` (403) menjadi pesan toast. Tombol star, edit, dan hapus memakai *event delegation* pada `<tbody>`. Setelah star, hanya baris yang bersangkutan dirender ulang. Tombol Edit membuka modal yang diisi dari data baris, lalu mengirim `PATCH`. Modal ini hanya dirender untuk Editor dan superuser. Baris tetap dirakit dengan `createElement` dan `textContent`, sehingga nilai teks tidak pernah ditafsirkan sebagai HTML. Dua dropdown (kategori dan urutan) adalah fitur tambahan di luar instruksi: pilihan kategori diisi dari data yang dikembalikan API, dan mengganti dropdown langsung memanggil ulang `GET /api/v1/skills/` dengan parameter yang sesuai. Jalur lama (`get_skills_json`, `create_skill_ajax`, `update_skill`, `delete_skill`, `toggle_skill_star`) saya pertahankan, begitu pula star pada landing page yang masih memakai form biasa.
 
 **5. Pengujian**
 
-`python manage.py test main` menjalankan 74 test dan semuanya lulus (43 test sebelumnya ditambah 31 test Skill). Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`; setelah dikembalikan, semuanya lulus lagi.
+`python manage.py test main` menjalankan 74 test dan semuanya lulus (43 test sebelumnya ditambah 31 test Skill). Test mencakup setiap peran, pemeriksaan isi database pada penolakan, validasi dan pembersihan tag, star (termasuk bahwa akun pemberi star diambil dari `request.user` dan pengunjung ditolak), serta memastikan email dan password hash tidak muncul di JSON. Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran. Seperti pada Tutorial 7, saya mencoba eksperimen sebaliknya: ketika permission Skill sementara saya ganti menjadi `AllowAny`, `test_guest_and_regular_user_cannot_write` dan `test_editor_cannot_create_or_delete` gagal dengan `201 != 403`. Setelah dikembalikan, semuanya lulus lagi.
 
-Selain test otomatis, perilaku JavaScript di browser saya periksa dengan skrip Selenium sementara (Chrome *headless* terhadap `StaticLiveServerTestCase`) yang memakai session login sungguhan untuk tiap peran. Enam skenarionya lulus: pengunjung hanya melihat tabel dan tautan login; pengguna biasa menekan star dua kali tanpa reload halaman (penanda `window.__marker` tetap ada); Editor mengubah kategori lewat modal dan nama tetap utuh karena `PATCH`; Editor yang mengirim `<b></b>` melihat toast "tidak boleh kosong" dan database tidak berubah; pemilik menambah lalu menghapus skill; pencarian, filter kategori, dan urutan star bekerja. Skrip itu sengaja tidak saya commit, karena butuh Chrome terpasang dan akan membuat `test main` tidak lagi berjalan di mesin mana pun. Dua kegagalan awalnya berasal dari skrip itu sendiri (elemen baris yang sudah dirender ulang, dan id field modal edit yang salah ketik), bukan dari aplikasi.
+Selain test otomatis, perilaku JavaScript di browser saya periksa dengan skrip Selenium sementara (Chrome *headless* terhadap `StaticLiveServerTestCase`) yang memakai session login sungguhan untuk tiap peran. Enam skenarionya lulus. Pengunjung hanya melihat tabel dan tautan login. Pengguna biasa menekan star dua kali tanpa reload halaman (penanda `window.__marker` tetap ada). Editor mengubah kategori lewat modal dan nama tetap utuh karena `PATCH`, sedangkan Editor yang mengirim `<b></b>` melihat toast "tidak boleh kosong" dan database tidak berubah. Pemilik bisa menambah lalu menghapus skill, dan pencarian, filter kategori, serta urutan star bekerja. Skrip itu sengaja tidak saya commit, karena butuh Chrome terpasang dan akan membuat `test main` tidak lagi berjalan di mesin mana pun. Dua kegagalan awalnya berasal dari skrip itu sendiri (elemen baris yang sudah dirender ulang, dan id field modal edit yang salah ketik), bukan dari aplikasi.
 
 Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memakai nama skill unik dan membandingkan jumlah dengan nilai awal, bukan angka mutlak. Test pertama saya sempat gagal delapan kali (`13 != 1`) karena asumsi yang salah ini, dan sumber masalahnya ada di test, bukan di kode produksi.
 
@@ -1051,7 +1051,7 @@ Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memak
 
 - Perilaku JavaScript di browser sudah diperiksa dengan skrip Selenium sementara, tetapi skrip itu tidak ada di repository, sehingga CI hanya menjalankan test sisi server. Kalau JavaScript halaman berubah, pemeriksaan browser harus diulang.
 - Daftar kategori pada dropdown dibangun dari skill yang pernah dimuat. Kategori yang baru ditambahkan lewat tab lain baru muncul setelah halaman dimuat ulang.
-- Pesan 403 pada endpoint Skill ditulis dalam bahasa Indonesia lewat atribut `message` pada `IsPortfolioOwnerOrEditorOrReadOnly`, supaya toast di halaman mudah dibaca. Endpoint star memakai `IsAuthenticated` bawaan DRF, sehingga penolakannya untuk pengunjung masih berbahasa Inggris; halaman tidak pernah memicunya karena pengunjung hanya melihat tautan ke login.
+- Pesan 403 pada endpoint Skill ditulis dalam bahasa Indonesia lewat atribut `message` pada `IsPortfolioOwnerOrEditorOrReadOnly`, supaya toast di halaman mudah dibaca. Endpoint star memakai `IsAuthenticated` bawaan DRF, sehingga penolakannya untuk pengunjung masih berbahasa Inggris, tetapi halaman tidak pernah memicunya karena pengunjung hanya melihat tautan ke login.
 - Star pada landing page (`#skills`) masih memakai form POST ke `toggle_skill_star`, sehingga memuat ulang halaman. Yang memakai API hanya halaman `/skills/manage/`.
 
 **7. Skenario pengujian**
@@ -1061,7 +1061,7 @@ Database test sudah berisi 12 skill hasil migrasi data, sehingga test saya memak
 | Pengunjung membuka `/skills/manage/` | Tabel dimuat lewat `GET /api/v1/skills/`, tanpa tombol aksi, star berupa tautan ke login |
 | Pengguna biasa menekan star dua kali | `POST` berstatus 200 lalu jumlah naik dan kembali, hanya baris itu yang berubah |
 | Editor menekan Edit, mengubah kategori, lalu Simpan | `PATCH` berstatus 200, modal tertutup, toast, baris menampilkan nilai baru |
-| Editor memanggil `POST` atau `DELETE` ke API | 403 dan database tidak berubah; tombol Hapus tidak tampil |
+| Editor memanggil `POST` atau `DELETE` ke API | 403 dan database tidak berubah, serta tombol Hapus tidak tampil |
 | Superuser menambah skill lewat modal | `POST` berstatus 201 dengan `X-CSRFToken`, modal tertutup, toast, daftar dimuat ulang |
 | Nama berisi spasi atau hanya tag HTML | 400, toast berisi pesan serializer |
 | `POST` ke API tanpa header `X-CSRFToken` (session login) | 403 |
@@ -1142,17 +1142,17 @@ Pada Tugas 6 saya tidak meminta "buatkan API untuk Skill" lalu menerima hasilnya
 | --- | --- | --- |
 | AI memilih model termudah, misalnya `Project` yang sudah dipakai di tutorial | Tugas meminta bagian yang saya kerjakan sendiri pada Tugas 3 sampai 5, bukan model tutorial | Saya menanyakan "Emg ga bole pilih bagian lain?" untuk memahami batasannya. Setelah membandingkan Project, Skill, dan Experience, saya tetap memakai `Skill` |
 | Semua test memakai `force_authenticate`, lalu CSRF dianggap terbukti | `force_authenticate` melewati proses login dan pemeriksaan CSRF | Test CSRF memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` untuk tiga peran, dipasangkan dengan test yang berhasil (201) saat token dikirim, supaya jelas 403 tadi karena token |
-| Test hijau, tetapi tidak benar-benar menjaga aturan | Test yang tidak pernah gagal tidak membuktikan apa pun | Permission Skill sementara saya longgarkan menjadi `AllowAny`; dua test gagal dengan `201 != 403`, lalu dikembalikan |
+| Test hijau, tetapi tidak benar-benar menjaga aturan | Test yang tidak pernah gagal tidak membuktikan apa pun | Permission Skill sementara saya longgarkan menjadi `AllowAny`, sehingga dua test gagal dengan `201 != 403`, lalu dikembalikan |
 | Penolakan hanya diperiksa lewat status HTTP | Tugas meminta isi database ikut diperiksa | `assertSkillUntouched()` memastikan jumlah dan nama skill tidak berubah setelah setiap penolakan |
-| Test mengasumsikan database kosong | Petunjuk menyebut database test kosong, tetapi migrasi data project ini menyeed 12 skill | Delapan test gagal `13 != 1`; test diperbaiki dengan nama unik dan jumlah relatif terhadap nilai awal |
+| Test mengasumsikan database kosong | Petunjuk menyebut database test kosong, tetapi migrasi data project ini menyeed 12 skill | Delapan test gagal `13 != 1`, lalu test diperbaiki dengan nama unik dan jumlah relatif terhadap nilai awal |
 | Peran Editor dibuat ulang di test dengan cara yang bentrok | Petunjuk meminta grup `Editor` dibuat di `setUp()`, padahal migrasi `0009` sudah membuatnya | Memakai `get_or_create`, sehingga test tetap benar di database yang sudah berisi grup tersebut |
-| Siapa pemberi star diambil dari body request | Tugas meminta akun selalu dari `request.user` | Ada test yang mengirim `user` dan `user_id` milik akun lain; hasilnya tetap akun yang login |
+| Siapa pemberi star diambil dari body request | Tugas meminta akun selalu dari `request.user` | Ada test yang mengirim `user` dan `user_id` milik akun lain dan hasilnya tetap akun yang login |
 | Serializer membocorkan data akun lewat `starred_by` | Email dan password hash tidak boleh tampil | `starred_by_names` hanya berisi username, dan test memeriksa bahwa email serta `pbkdf2` tidak ada di respons |
-| Field hasil perhitungan bisa ditimpa klien | Field star harus read-only | Test mengirim `star_count: 99` dan `starred_by` pada `POST`; semuanya diabaikan |
+| Field hasil perhitungan bisa ditimpa klien | Field star harus read-only | Test mengirim `star_count: 99` dan `starred_by` pada `POST` dan semuanya diabaikan |
 | Star lewat `fetch()`, tetapi cookie `csrftoken` tidak pernah terbit untuk pengguna biasa | Petunjuk menyebut halaman harus tetap menyetel cookie CSRF | Template menyertakan `{% csrf_token %}`, dan test memeriksa cookie untuk pengunjung, pengguna biasa, Editor, dan pemilik |
 | Tombol disembunyikan, tetapi server tidak memeriksa | Hak akses harus ditegakkan di permission class | Test memanggil API langsung sebagai tiap peran, termasuk akun `is_staff` tanpa peran, yang tetap ditolak |
-| AI menambah cakupan di luar permintaan | Pekerjaan yang tidak saya pahami tidak bisa saya pertanggungjawabkan | Star di landing page sengaja tidak diubah; perubahan dibatasi pada halaman Skill, dan trailer `Co-Authored-By` otomatis saya minta dihilangkan |
-| AI melaporkan "selesai" padahal masih ada yang bisa dikerjakan | Laporan AI bukan bukti | Saya menegur "loh, perbaiki apa yg perlu kamu perbaiki dong"; sesudahnya pesan 403 diindonesiakan dan diberi test |
+| AI menambah cakupan di luar permintaan | Pekerjaan yang tidak saya pahami tidak bisa saya pertanggungjawabkan | Star di landing page sengaja tidak diubah, perubahan dibatasi pada halaman Skill, dan trailer `Co-Authored-By` otomatis saya minta dihilangkan |
+| AI melaporkan "selesai" padahal masih ada yang bisa dikerjakan | Laporan AI bukan bukti | Saya menegur "loh, perbaiki apa yg perlu kamu perbaiki dong", lalu pesan 403 diindonesiakan dan diberi test |
 
 Pola prompt yang saya pakai berulang: meminta AI membandingkan hasilnya dengan teks tugas, meminta bukti (test yang gagal ketika aturan dilanggar, perintah Git, isi database) alih-alih ringkasan, dan memutuskan sendiri pilihan yang menyangkut cakupan, misalnya tetap memakai `Skill` dan membiarkan `index.html` apa adanya. Riwayat lengkap percakapan tersimpan di sesi Claude Code saya.
 
@@ -1178,12 +1178,12 @@ Karena itu, saya tetap menggunakan browser sebagai alat verifikasi
 
 Jawaban AI tidak membuktikan bahwa:
 
-- migration berhasil;
-- endpoint mengembalikan data yang benar;
-- static files termuat;
-- layout mobile tidak bertumpuk;
-- environment variable berhasil dibaca;
-- pembatasan hak akses benar-benar menolak pengguna yang tidak berhak;
+- migration berhasil
+- endpoint mengembalikan data yang benar
+- static files termuat
+- layout mobile tidak bertumpuk
+- environment variable berhasil dibaca
+- pembatasan hak akses benar-benar menolak pengguna yang tidak berhak
 - deployment berjalan sesuai harapan.
 
 Semua hal tersebut tetap perlu diuji secara langsung dan debugging mandiri agar terlatih
@@ -1246,11 +1246,11 @@ Setelah test lulus, AI melaporkan pekerjaan selesai dan menyerahkan hal yang seb
 
 ### 15. Verifikasi bisa tertinggal di belakang commit
 
-Dalam satu perintah AI menjalankan `manage.py check` dengan Python sistem (bukan virtual environment), perintah itu gagal karena `rest_framework` tidak ditemukan, tetapi `git commit` pada rangkaian perintah yang sama tetap berjalan. AI mengakuinya dan memverifikasi sesudahnya dengan Python dari `env/`; serializer terbukti benar, tetapi urutannya salah. Virtual environment proyek ternyata juga belum memasang `djangorestframework` walaupun ada di `requirements.txt`.
+Dalam satu perintah AI menjalankan `manage.py check` dengan Python sistem (bukan virtual environment), perintah itu gagal karena `rest_framework` tidak ditemukan, tetapi `git commit` pada rangkaian perintah yang sama tetap berjalan. AI mengakuinya dan memverifikasi sesudahnya dengan Python dari `env/`. Serializer terbukti benar, tetapi urutannya salah. Virtual environment proyek ternyata juga belum memasang `djangorestframework` walaupun ada di `requirements.txt`.
 
 ### 16. Perintah shell panjang gagal dan harus diganti
 
-Dua kali AI menulis berkas besar lewat *heredoc* di Bash dan gagal dengan `unexpected EOF` karena ada tanda kutip tunggal di dalam teks. Karena gagal sebelum menulis apa pun, tidak ada berkas setengah jadi, tetapi AI harus memeriksa `git status` dulu lalu beralih ke alat tulis berkas. Selain itu, bawaan Claude Code menyarankan trailer `Co-Authored-By` pada commit; saya meminta trailer itu tidak dipakai, dan AI memeriksa riwayat dengan `git log --format=%B | grep -ci co-authored` bernilai 0.
+Dua kali AI menulis berkas besar lewat *heredoc* di Bash dan gagal dengan `unexpected EOF` karena ada tanda kutip tunggal di dalam teks. Karena gagal sebelum menulis apa pun, tidak ada berkas setengah jadi, tetapi AI harus memeriksa `git status` dulu lalu beralih ke alat tulis berkas. Selain itu, bawaan Claude Code menyarankan trailer `Co-Authored-By` pada commit, tetapi saya meminta trailer itu tidak dipakai dan AI memeriksa riwayat dengan `git log --format=%B | grep -ci co-authored` bernilai 0.
 
 Tidak semua temuan bersifat negatif. Saat memindahkan `getCookie` ke berkas bersama, AI menemukan salinan lain dari fungsi yang sama di widget chat pada `base.html`, lalu melaporkannya tanpa mengubahnya karena berada di luar permintaan. Perilaku seperti inilah yang saya harapkan, melapor, bukan diam-diam memperluas cakupan pekerjaan.
 
@@ -1271,14 +1271,14 @@ AI berfungsi sebagai titik awal analisis. Setelah menerima saran, saya melakukan
 | Fitur `next` yang tidak diminta | Menulis kodenya tanpa diminta | Membatalkan commit tersebut sebelum di-*push* |
 | Tombol star memakai `fetch` | Mengubah implementasi menjadi asinkronus | Mengembalikannya ke form HTML standar sesuai materi tutorial |
 | Status pekerjaan yang salah dilaporkan | Menyatakan tahap sudah selesai | Memverifikasi ulang melalui `git diff` dan memintanya dikerjakan |
-| Branch otorisasi belum ter-*merge* | — | Ditemukan sendiri saat membaca `views.py`, lalu di-*merge* dan diperiksa ulang |
-| Email tampil pada endpoint publik | — | Mengganti akun uji dengan username biasa lalu memeriksa ulang `/api/skills/` |
+| Branch otorisasi belum ter-*merge* | Tidak ada | Ditemukan sendiri saat membaca `views.py`, lalu di-*merge* dan diperiksa ulang |
+| Email tampil pada endpoint publik | Tidak ada | Mengganti akun uji dengan username biasa lalu memeriksa ulang `/api/skills/` |
 | Bentuk respons AJAX menyimpang dari tutorial | Menulis versi awal dan mendaftar perbedaannya saat diminta membandingkan | Menyamakan seluruh bentuk respons dan cara JavaScript membacanya dengan tutorial |
-| Branch `xss-protection` dan `search-debounce` belum ter-*merge* | — | Ditemukan lewat `git log` dan `git branch --merged`, lalu di-*merge*; konflik `projects.html` diselesaikan dengan mempertahankan kedua fitur |
+| Branch `xss-protection` dan `search-debounce` belum ter-*merge* | Tidak ada | Ditemukan lewat `git log` dan `git branch --merged`, lalu di-*merge*. Konflik `projects.html` diselesaikan dengan mempertahankan kedua fitur |
 | Test Skill gagal `13 != 1` | Menulis test dengan asumsi database kosong | Menelusuri penyebabnya (data migration menyeed 12 skill), lalu test memakai nama unik dan jumlah relatif terhadap nilai awal |
-| Pesan 403 Editor berbahasa Inggris | Menyerahkannya kembali sebagai "keterbatasan" | Meminta AI memperbaikinya; `message` ditambahkan pada permission dan ada test yang memeriksa isinya |
+| Pesan 403 Editor berbahasa Inggris | Menyerahkannya kembali sebagai "keterbatasan" | Meminta AI memperbaikinya, lalu `message` ditambahkan pada permission dan ada test yang memeriksa isinya |
 | Trailer `Co-Authored-By` pada commit | Bawaan Claude Code menyarankannya | Meminta menghilangkannya, lalu memeriksa `git log` bernilai 0 trailer |
-| Perilaku JavaScript belum teruji | Menyatakan tidak punya alat browser | Meminta hasil maksimal; enam skenario browser dijalankan lewat Selenium untuk tiap peran, dan dua kegagalan awal terbukti salah skrip, bukan salah aplikasi |
+| Perilaku JavaScript belum teruji | Menyatakan tidak punya alat browser | Meminta hasil maksimal, lalu enam skenario browser dijalankan lewat Selenium untuk tiap peran, dan dua kegagalan awal terbukti salah skrip, bukan salah aplikasi |
 | `getCookie` hanya tersedia di halaman Projects | Memindahkannya ke `static/js/utils.js` dan melaporkan salinan lain di widget chat | Menguji ulang tambah project setelah pemindahan dan membiarkan salinan lokal widget chat tetap terpisah |
 
 ---
@@ -1345,18 +1345,18 @@ Untuk aplikasi production, konfigurasi seperti `DEBUG = False`, penggunaan HTTPS
 
 # Referensi
 
-- [Django — The Development Server](https://docs.djangoproject.com/en/5.2/intro/tutorial01/#the-development-server)
-- [Django — Model Forms](https://docs.djangoproject.com/en/5.2/topics/forms/modelforms/)
-- [Django — Serialization](https://docs.djangoproject.com/en/5.2/topics/serialization/)
-- [Django — CSRF Protection](https://docs.djangoproject.com/en/5.2/ref/csrf/)
-- [Django — Using the Django authentication system](https://docs.djangoproject.com/en/5.2/topics/auth/default/)
-- [Django — How to use sessions](https://docs.djangoproject.com/en/5.2/topics/http/sessions/)
-- [Django — Data Migrations](https://docs.djangoproject.com/en/5.2/topics/migrations/#data-migrations)
-- [Django — JsonResponse](https://docs.djangoproject.com/en/5.2/ref/request-response/#jsonresponse-objects)
-- [Django — strip_tags](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.html.strip_tags)
-- [MDN — Using the Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
-- [MDN — async function dan await](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Async_JS)
-- [MDN — Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API)
-- [OWASP — Cross Site Scripting (XSS)](https://owasp.org/www-community/attacks/xss/)
+- [Django: The Development Server](https://docs.djangoproject.com/en/5.2/intro/tutorial01/#the-development-server)
+- [Django: Model Forms](https://docs.djangoproject.com/en/5.2/topics/forms/modelforms/)
+- [Django: Serialization](https://docs.djangoproject.com/en/5.2/topics/serialization/)
+- [Django: CSRF Protection](https://docs.djangoproject.com/en/5.2/ref/csrf/)
+- [Django: Using the Django authentication system](https://docs.djangoproject.com/en/5.2/topics/auth/default/)
+- [Django: How to use sessions](https://docs.djangoproject.com/en/5.2/topics/http/sessions/)
+- [Django: Data Migrations](https://docs.djangoproject.com/en/5.2/topics/migrations/#data-migrations)
+- [Django: JsonResponse](https://docs.djangoproject.com/en/5.2/ref/request-response/#jsonresponse-objects)
+- [Django: strip_tags](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.html.strip_tags)
+- [MDN: Using the Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
+- [MDN: async function dan await](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Async_JS)
+- [MDN: Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API)
+- [OWASP: Cross Site Scripting (XSS)](https://owasp.org/www-community/attacks/xss/)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Shields.io](https://shields.io/badges/static-badge)
